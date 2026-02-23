@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+function getBaseUrl(reqUrl: string) {
+  return process.env.APP_URL || process.env.AUTH_URL || new URL(reqUrl).origin;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token");
+  const baseUrl = getBaseUrl(req.url);
 
   if (!token) {
-    return NextResponse.redirect(
-      new URL("/login?error=invalid-token", req.url)
-    );
+    return NextResponse.redirect(`${baseUrl}/login?error=invalid-token`);
   }
 
   const user = await prisma.user.findUnique({
@@ -16,9 +19,7 @@ export async function GET(req: Request) {
   });
 
   if (!user) {
-    return NextResponse.redirect(
-      new URL("/login?error=invalid-token", req.url)
-    );
+    return NextResponse.redirect(`${baseUrl}/login?error=invalid-token`);
   }
 
   await prisma.user.update({
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
     },
   });
 
-  return NextResponse.redirect(
-    new URL("/login?verified=true", req.url)
-  );
+  console.log(`[verify] User ${user.id} email verified`);
+
+  return NextResponse.redirect(`${baseUrl}/login?verified=true`);
 }

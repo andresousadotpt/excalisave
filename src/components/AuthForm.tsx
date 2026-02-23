@@ -68,11 +68,15 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
 
         if (result?.error) {
-          if (result.error.includes("verify")) {
-            throw new Error("Please verify your email before signing in");
+          const code = result.code || result.error;
+          if (code === "email_not_verified") {
+            throw new Error("Please verify your email before signing in.");
           }
-          if (result.error.includes("suspended")) {
-            throw new Error("Your account has been suspended");
+          if (code === "account_banned") {
+            throw new Error("Your account has been suspended.");
+          }
+          if (code === "account_not_setup") {
+            throw new Error("Please check your email for the invite link to set your password.");
           }
           throw new Error("Invalid email or password");
         }

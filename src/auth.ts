@@ -1,8 +1,20 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { hashEmail, serverDecrypt } from "@/lib/server-crypto";
+
+class EmailNotVerified extends CredentialsSignin {
+  code = "email_not_verified";
+}
+
+class AccountBanned extends CredentialsSignin {
+  code = "account_banned";
+}
+
+class AccountNotSetup extends CredentialsSignin {
+  code = "account_not_setup";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -38,12 +50,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user.emailVerified) {
           console.warn(`[auth] Unverified email for user ${user.id}`);
-          throw new Error("Please verify your email before signing in");
+          throw new EmailNotVerified();
         }
 
         if (user.banned) {
           console.warn(`[auth] Banned user ${user.id} attempted login`);
-          throw new Error("Your account has been suspended");
+          throw new AccountBanned();
+        }
+
+        if (user.inviteToken) {
+          console.warn(`[auth] User ${user.id} hasn't accepted invite yet`);
+          throw new AccountNotSetup();
         }
 
         const decryptedEmail = serverDecrypt(user.encryptedEmail);

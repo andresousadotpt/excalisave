@@ -5,7 +5,7 @@ function getResend() {
 }
 
 function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || "http://localhost:3000";
+  return process.env.APP_URL || process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
 export async function sendVerificationEmail(
