@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Excalisave
 
-## Getting Started
+A self-hosted [Excalidraw](https://excalidraw.com) drawing manager with end-to-end encryption. Save, organize, and access your drawings from anywhere — your data stays on your server.
 
-First, run the development server:
+## Features
+
+- End-to-end encrypted drawings (client-side encryption with a master key)
+- User authentication with email verification
+- Admin user with configurable credentials
+- Self-hostable with Docker
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (React 19)
+- **Database:** PostgreSQL 17
+- **ORM:** Prisma 7
+- **Auth:** NextAuth.js v5
+- **Drawing:** Excalidraw
+- **Styling:** Tailwind CSS v4
+- **Email:** Resend
+
+## Quick Start (Docker)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-user/excalisave.git
+cd excalisave
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create a `.env` file or pass environment variables directly:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+AUTH_SECRET=your-random-secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-me-on-first-login
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Start the application:
 
-## Learn More
+```bash
+docker compose up -d
+```
 
-To learn more about Next.js, take a look at the following resources:
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+On startup, the container automatically:
+1. Runs Prisma migrations (`prisma migrate deploy`)
+2. Seeds the admin user
+3. Starts the Next.js server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment Variables
 
-## Deploy on Vercel
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | (set by compose) | PostgreSQL connection string |
+| `AUTH_SECRET` | `change-me-in-production` | Secret for signing auth tokens |
+| `AUTH_URL` | `http://localhost:3000` | Public URL of the app |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Public URL exposed to the client |
+| `REGISTRATION_ENABLED` | `true` | Allow new user registration |
+| `RESEND_API_KEY` | — | API key for sending emails via Resend |
+| `EMAIL_FROM` | `Excalisave <noreply@example.com>` | Sender address for emails |
+| `ADMIN_EMAIL` | `admin@example.com` | Default admin account email |
+| `ADMIN_PASSWORD` | `change-me-on-first-login` | Default admin account password |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Local Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install
+```
+
+Start a local PostgreSQL database, then:
+
+```bash
+# Run migrations
+npm run db:migrate
+
+# Generate Prisma client
+npm run db:generate
+
+# Seed the database
+npm run db:seed
+
+# Start the dev server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
