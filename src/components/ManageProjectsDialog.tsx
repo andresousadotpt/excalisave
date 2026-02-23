@@ -76,16 +76,25 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
         <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Manage Projects</h2>
 
         {/* Create form */}
-        <form onSubmit={handleCreate} className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="New project name"
-            required
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
-          <div className="flex gap-1 items-center">
+        <form onSubmit={handleCreate} className="space-y-2 mb-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="New project name"
+              required
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex-shrink-0"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex gap-1.5 items-center">
             {COLORS.map((c) => (
               <button
                 key={c}
@@ -96,13 +105,6 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
               />
             ))}
           </div>
-          <button
-            type="submit"
-            disabled={loading || !name.trim()}
-            className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex-shrink-0"
-          >
-            Add
-          </button>
         </form>
 
         {/* Project list */}
@@ -113,14 +115,18 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
             projects.map((project) => (
               <div key={project.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
                 {editId === project.id ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                      autoFocus
-                    />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        autoFocus
+                      />
+                      <button onClick={() => handleUpdate(project.id)} className="text-xs text-blue-600 hover:text-blue-700">Save</button>
+                      <button onClick={() => setEditId(null)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                    </div>
                     <div className="flex gap-1 items-center">
                       {COLORS.map((c) => (
                         <button
@@ -132,9 +138,7 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
                         />
                       ))}
                     </div>
-                    <button onClick={() => handleUpdate(project.id)} className="text-xs text-blue-600 hover:text-blue-700">Save</button>
-                    <button onClick={() => setEditId(null)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
-                  </>
+                  </div>
                 ) : (
                   <>
                     {project.color && (

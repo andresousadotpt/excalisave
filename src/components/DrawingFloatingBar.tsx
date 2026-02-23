@@ -17,6 +17,12 @@ interface ProjectItem {
   color: string | null;
 }
 
+interface TagItem {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface DrawingFloatingBarProps {
   currentDrawingId: string;
   currentDrawingName: string;
@@ -36,19 +42,28 @@ export function DrawingFloatingBar({
   const [expanded, setExpanded] = useState(false);
   const [drawings, setDrawings] = useState<DrawingItem[]>([]);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [tags, setTags] = useState<TagItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filterProject, setFilterProject] = useState<string | null>(null);
 
+  const tagMap = useMemo(() => {
+    const map = new Map<string, TagItem>();
+    tags.forEach((t) => map.set(t.id, t));
+    return map;
+  }, [tags]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [drawingsRes, projectsRes] = await Promise.all([
+      const [drawingsRes, projectsRes, tagsRes] = await Promise.all([
         fetch("/api/drawings"),
         fetch("/api/projects"),
+        fetch("/api/tags"),
       ]);
       if (drawingsRes.ok) setDrawings(await drawingsRes.json());
       if (projectsRes.ok) setProjects(await projectsRes.json());
+      if (tagsRes.ok) setTags(await tagsRes.json());
     } catch {
       // ignore
     } finally {
@@ -195,11 +210,28 @@ export function DrawingFloatingBar({
                       }`}>
                         {d.name}
                       </span>
-                      {d.projectId && (
-                        <span className="text-xs text-gray-400">
-                          {projects.find((p) => p.id === d.projectId)?.name}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {d.projectId && (
+                          <span className="text-xs text-gray-400">
+                            {projects.find((p) => p.id === d.projectId)?.name}
+                          </span>
+                        )}
+                        {d.tagIds.map((tagId) => {
+                          const tag = tagMap.get(tagId);
+                          if (!tag) return null;
+                          return (
+                            <span
+                              key={tag.id}
+                              className="inline-flex items-center gap-0.5 px-1 py-0 rounded text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300"
+                            >
+                              {tag.color && (
+                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                              )}
+                              {tag.name}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                     {d.id === currentDrawingId && (
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0" />

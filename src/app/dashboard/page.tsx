@@ -7,6 +7,7 @@ import { CreateDrawingDialog } from "@/components/CreateDrawingDialog";
 import { DeleteDrawingDialog } from "@/components/DeleteDrawingDialog";
 import { ManageProjectsDialog } from "@/components/ManageProjectsDialog";
 import { ManageTagsDialog } from "@/components/ManageTagsDialog";
+import { DrawingSettingsDialog } from "@/components/DrawingSettingsDialog";
 
 interface Drawing {
   id: string;
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showManageProjects, setShowManageProjects] = useState(false);
   const [showManageTags, setShowManageTags] = useState(false);
+  const [settingsId, setSettingsId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -285,6 +287,7 @@ export default function DashboardPage() {
                 projectColor={project?.color}
                 tags={drawingTags}
                 onDelete={setDeleteId}
+                onSettings={setSettingsId}
               />
             );
           })}
@@ -316,6 +319,23 @@ export default function DashboardPage() {
         onClose={() => setShowManageTags(false)}
         onUpdated={() => { fetchTags(); fetchData(); }}
       />
+      {settingsId && (() => {
+        const drawing = drawings.find((d) => d.id === settingsId);
+        if (!drawing) return null;
+        return (
+          <DrawingSettingsDialog
+            open={true}
+            drawingId={drawing.id}
+            drawingName={drawing.name}
+            projectId={drawing.projectId}
+            tagIds={drawing.tagIds}
+            projects={projects.map((p) => ({ id: p.id, name: p.name, color: p.color }))}
+            tags={tags.map((t) => ({ id: t.id, name: t.name, color: t.color }))}
+            onClose={() => setSettingsId(null)}
+            onUpdated={fetchData}
+          />
+        );
+      })()}
     </>
   );
 }
