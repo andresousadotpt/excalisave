@@ -99,7 +99,119 @@ export async function decryptMasterKey(
     "raw",
     rawKey,
     { name: "AES-GCM", length: KEY_LENGTH },
-    false, // non-extractable in memory
+    true, // extractable for sessionStorage persistence
+    ["encrypt", "decrypt"]
+  );
+}
+
+const PIN_PBKDF2_ITERATIONS = 100_000;
+
+/** Encrypt master key with a PIN (reduced iterations for faster unlock) */
+export async function encryptMasterKeyWithPin(
+  masterKey: CryptoKey,
+  pin: string
+): Promise<{ encryptedKey: string; salt: string; iv: string }> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  const wrappingKey = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: PIN_PBKDF2_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"]
+  );
+
+  const rawKey = await crypto.subtle.exportKey("raw", masterKey);
+  const encryptedKey = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    wrappingKey,
+    rawKey
+  );
+
+  return {
+    encryptedKey: bufferToBase64(encryptedKey),
+    salt: bufferToBase64(salt.buffer),
+    iv: bufferToBase64(iv.buffer),
+  };
+}
+
+/** Decrypt master key using a PIN */
+export async function decryptMasterKeyWithPin(
+  encryptedKeyB64: string,
+  saltB64: string,
+  ivB64: string,
+  pin: string
+): Promise<CryptoKey> {
+  const encryptedKey = base64ToBuffer(encryptedKeyB64);
+  const salt = base64ToBuffer(saltB64);
+  const iv = base64ToBuffer(ivB64);
+
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  const wrappingKey = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: PIN_PBKDF2_ITERATIONS,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"]
+  );
+
+  const rawKey = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    wrappingKey,
+    encryptedKey
+  );
+
+  return crypto.subtle.importKey(
+    "raw",
+    rawKey,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/** Export a CryptoKey to base64 string for sessionStorage */
+export async function exportMasterKey(key: CryptoKey): Promise<string> {
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return bufferToBase64(raw);
+}
+
+/** Import a base64 string back into a CryptoKey */
+export async function importMasterKey(b64: string): Promise<CryptoKey> {
+  const raw = base64ToBuffer(b64);
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    true,
     ["encrypt", "decrypt"]
   );
 }

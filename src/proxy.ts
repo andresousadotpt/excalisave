@@ -56,8 +56,8 @@ export default auth((req) => {
     }
   }
 
-  // Redirect logged-in users away from auth pages
-  if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
+  // Redirect logged-in users away from auth pages and landing page
+  if (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/register")) {
     if (isLoggedIn) {
       if (user?.mustChangePassword) {
         return NextResponse.redirect(new URL("/change-password", req.url));
@@ -71,6 +71,7 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/draw/:path*",
     "/admin/:path*",

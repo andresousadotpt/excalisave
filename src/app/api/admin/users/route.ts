@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hashEmail, serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
-import { sendInviteEmail } from "@/lib/email";
+import { sendInviteEmail, getAppUrl } from "@/lib/email";
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
@@ -95,9 +95,12 @@ export async function POST(req: Request) {
 
     await sendInviteEmail(email, inviteToken);
 
+    const appUrl = getAppUrl();
+    const inviteUrl = `${appUrl}/accept-invite?token=${inviteToken}`;
+
     console.log(`[admin] User invited by ${session.user.id} for ${emailH.slice(0, 8)}...`);
 
-    return NextResponse.json({ success: true }, { status: 201 });
+    return NextResponse.json({ success: true, inviteUrl }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

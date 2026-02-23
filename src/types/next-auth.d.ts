@@ -7,6 +7,9 @@ declare module "next-auth" {
     encryptedMasterKey?: string;
     masterKeySalt?: string;
     masterKeyIv?: string;
+    encryptedMasterKeyPin?: string;
+    masterKeyPinSalt?: string;
+    masterKeyPinIv?: string;
   }
 
   interface Session {
@@ -18,6 +21,9 @@ declare module "next-auth" {
       encryptedMasterKey: string;
       masterKeySalt: string;
       masterKeyIv: string;
+      encryptedMasterKeyPin?: string;
+      masterKeyPinSalt?: string;
+      masterKeyPinIv?: string;
     };
   }
 }
@@ -30,5 +36,8 @@ declare module "next-auth/jwt" {
     encryptedMasterKey: string;
     masterKeySalt: string;
     masterKeyIv: string;
+    encryptedMasterKeyPin?: string;
+    masterKeyPinSalt?: string;
+    masterKeyPinIv?: string;
   }
 }

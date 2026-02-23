@@ -9,9 +9,9 @@ export default function LandingPage() {
                     <Image
                         src="/excalisave-logo.png"
                         alt="Excalisave"
-                        width={80}
+                        width={200}
                         height={80}
-                        className="h-20 w-20"
+                        className="h-20 w-auto"
                         priority
                     />
                 </div>

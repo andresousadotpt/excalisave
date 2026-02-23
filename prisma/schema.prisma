@@ -15,6 +15,9 @@ model User {
   encryptedMasterKey String
   masterKeySalt      String
   masterKeyIv        String
+  encryptedMasterKeyPin String?
+  masterKeyPinSalt      String?
+  masterKeyPinIv        String?
   role               String    @default("user")
   emailVerified      Boolean   @default(false)
   verificationToken  String?   @unique

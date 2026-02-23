@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 interface Stats {
   totalUsers: number;
@@ -29,8 +29,11 @@ export default function AdminPage() {
   const [createEmail, setCreateEmail] = useState("");
   const [createError, setCreateError] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [togglingRegistration, setTogglingRegistration] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   const fetchData = useCallback(async () => {
     const [statsRes, usersRes, settingsRes] = await Promise.all([
@@ -68,6 +71,16 @@ export default function AdminPage() {
     if (res.ok) fetchData();
   }
 
+  async function handleRoleChange(id: string, newRole: string) {
+    if (!confirm(`Change this user's role to "${newRole}"?`)) return;
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
+    });
+    if (res.ok) fetchData();
+  }
+
   async function handleToggleRegistration() {
     setTogglingRegistration(true);
     const newValue = !registrationEnabled;
@@ -92,13 +105,13 @@ export default function AdminPage() {
         body: JSON.stringify({ email: createEmail }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Failed to create user");
       }
 
-      setShowCreate(false);
       setCreateEmail("");
+      setInviteUrl(data.inviteUrl || null);
       fetchData();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Something went wrong");
@@ -106,6 +119,12 @@ export default function AdminPage() {
       setCreateLoading(false);
     }
   }
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter((u) => u.email.toLowerCase().includes(q));
+  }, [users, userSearch]);
 
   if (loading) {
     return (
@@ -156,11 +175,18 @@ export default function AdminPage() {
 
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Users</h2>
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">Users</h2>
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            className="flex-1 max-w-xs px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          />
           <button
             onClick={() => setShowCreate(true)}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
           >
             + Invite User
           </button>
@@ -178,19 +204,21 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{user.email}</td>
                   <td className="px-4 py-2">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                    <button
+                      onClick={() => handleRoleChange(user.id, user.role === "admin" ? "user" : "admin")}
+                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
                         user.role === "admin"
                           ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
                           : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                       }`}
+                      title={`Click to change to ${user.role === "admin" ? "user" : "admin"}`}
                     >
                       {user.role}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-4 py-2">
                     {user.banned ? (
@@ -210,43 +238,41 @@ export default function AdminPage() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2">
-                    {user.role !== "admin" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleBan(user.id, !user.banned)}
-                          className={`text-xs px-2 py-1 rounded transition-colors ${
-                            user.banned
-                              ? "text-green-600 hover:text-green-700 dark:text-green-400"
-                              : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
-                          }`}
-                        >
-                          {user.banned ? "Unban" : "Ban"}
-                        </button>
-                        {deleteConfirm === user.id ? (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => handleDelete(user.id)}
-                              className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleBan(user.id, !user.banned)}
+                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                          user.banned
+                            ? "text-green-600 hover:text-green-700 dark:text-green-400"
+                            : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
+                        }`}
+                      >
+                        {user.banned ? "Unban" : "Ban"}
+                      </button>
+                      {deleteConfirm === user.id ? (
+                        <div className="flex gap-1">
                           <button
-                            onClick={() => setDeleteConfirm(user.id)}
-                            className="text-xs text-red-500 hover:text-red-700"
+                            onClick={() => handleDelete(user.id)}
+                            className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                           >
-                            Delete
+                            Confirm
                           </button>
-                        )}
-                      </div>
-                    )}
+                          <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteConfirm(user.id)}
+                          className="text-xs text-red-500 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -259,43 +285,86 @@ export default function AdminPage() {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl w-full max-w-sm mx-4">
-            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-              Invite User
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              An invite email will be sent so they can set their own password.
-            </p>
-            <form onSubmit={handleCreateUser} className="space-y-3">
-              <input
-                type="email"
-                value={createEmail}
-                onChange={(e) => setCreateEmail(e.target.value)}
-                placeholder="Email address"
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                autoFocus
-              />
-              {createError && <p className="text-red-500 text-sm">{createError}</p>}
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreate(false);
-                    setCreateError("");
-                  }}
-                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={createLoading}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  {createLoading ? "Sending..." : "Send Invite"}
-                </button>
-              </div>
-            </form>
+            {inviteUrl ? (
+              <>
+                <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+                  Invite Sent
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                  The invite email has been sent. You can also copy the link below:
+                </p>
+                <div className="flex gap-2 items-center mb-4">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteUrl}
+                    className="flex-1 px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 truncate"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteUrl);
+                      setInviteCopied(true);
+                      setTimeout(() => setInviteCopied(false), 2000);
+                    }}
+                    className="px-3 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+                  >
+                    {inviteCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowCreate(false);
+                      setInviteUrl(null);
+                      setInviteCopied(false);
+                    }}
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                  Invite User
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  An invite email will be sent so they can set their own password.
+                </p>
+                <form onSubmit={handleCreateUser} className="space-y-3">
+                  <input
+                    type="email"
+                    value={createEmail}
+                    onChange={(e) => setCreateEmail(e.target.value)}
+                    placeholder="Email address"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    autoFocus
+                  />
+                  {createError && <p className="text-red-500 text-sm">{createError}</p>}
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreate(false);
+                        setCreateError("");
+                      }}
+                      className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createLoading}
+                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      {createLoading ? "Sending..." : "Send Invite"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

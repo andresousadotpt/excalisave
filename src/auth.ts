@@ -75,6 +75,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           encryptedMasterKey: user.encryptedMasterKey,
           masterKeySalt: user.masterKeySalt,
           masterKeyIv: user.masterKeyIv,
+          encryptedMasterKeyPin: user.encryptedMasterKeyPin ?? undefined,
+          masterKeyPinSalt: user.masterKeyPinSalt ?? undefined,
+          masterKeyPinIv: user.masterKeyPinIv ?? undefined,
         };
       },
     }),
@@ -92,6 +95,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.encryptedMasterKey = user.encryptedMasterKey as string;
         token.masterKeySalt = user.masterKeySalt as string;
         token.masterKeyIv = user.masterKeyIv as string;
+        token.encryptedMasterKeyPin = user.encryptedMasterKeyPin;
+        token.masterKeyPinSalt = user.masterKeyPinSalt;
+        token.masterKeyPinIv = user.masterKeyPinIv;
       }
       return token;
     },
@@ -102,6 +108,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.encryptedMasterKey = token.encryptedMasterKey as string;
       session.user.masterKeySalt = token.masterKeySalt as string;
       session.user.masterKeyIv = token.masterKeyIv as string;
+      session.user.encryptedMasterKeyPin = token.encryptedMasterKeyPin as string | undefined;
+      session.user.masterKeyPinSalt = token.masterKeyPinSalt as string | undefined;
+      session.user.masterKeyPinIv = token.masterKeyPinIv as string | undefined;
       return session;
     },
   },

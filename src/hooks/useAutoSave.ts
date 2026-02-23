@@ -4,42 +4,41 @@ import { useRef, useCallback, useState } from "react";
 
 interface UseAutoSaveOptions {
   onSave: (data: string, thumbnail?: string | null) => Promise<void>;
+  getSceneData: () => { data: string; thumbnail: Promise<string | null> } | null;
   delay?: number;
 }
 
-export function useAutoSave({ onSave, delay = 3000 }: UseAutoSaveOptions) {
+export function useAutoSave({ onSave, getSceneData, delay = 3000 }: UseAutoSaveOptions) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingDataRef = useRef<string | null>(null);
-  const pendingThumbnailRef = useRef<string | null>(null);
+  const dirtyRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
 
-  const triggerSave = useCallback(
-    (data: string, thumbnail?: string | null) => {
-      pendingDataRef.current = data;
-      if (thumbnail !== undefined) {
-        pendingThumbnailRef.current = thumbnail ?? null;
+  const markDirty = useCallback(() => {
+    dirtyRef.current = true;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    timerRef.current = setTimeout(async () => {
+      if (!dirtyRef.current) return;
+      dirtyRef.current = false;
+
+      const sceneResult = getSceneData();
+      if (!sceneResult) return;
+
+      setSaveStatus("saving");
+      try {
+        const thumbnail = await sceneResult.thumbnail;
+        await onSave(sceneResult.data, thumbnail);
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (err) {
+        console.error("Auto-save failed:", err);
+        setSaveStatus("idle");
       }
+    }, delay);
+  }, [onSave, getSceneData, delay]);
 
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-
-      timerRef.current = setTimeout(async () => {
-        if (pendingDataRef.current === null) return;
-
-        setSaveStatus("saving");
-        try {
-          await onSave(pendingDataRef.current, pendingThumbnailRef.current);
-          setSaveStatus("saved");
-          setTimeout(() => setSaveStatus("idle"), 2000);
-        } catch (err) {
-          console.error("Auto-save failed:", err);
-          setSaveStatus("idle");
-        }
-      }, delay);
-    },
-    [onSave, delay]
-  );
-
-  return { triggerSave, saveStatus };
+  return { markDirty, saveStatus };
 }

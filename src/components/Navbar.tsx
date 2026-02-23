@@ -8,6 +8,7 @@ export function Navbar() {
     const {data: session} = useSession();
 
     async function handleSignOut() {
+        sessionStorage.removeItem("mk");
         await signOut({redirectTo: "/login"});
     }
 
@@ -21,7 +22,7 @@ export function Navbar() {
                     <img
                         src="/excalisave-logo.png"
                         alt=""
-                        className="h-8 w-8"
+                        className="h-8 w-auto"
                         width={32}
                         height={32}
                     />
