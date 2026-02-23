@@ -133,21 +133,23 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4 gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex-shrink-0">My Drawings</h1>
-        <input
-          type="text"
-          placeholder="Search drawings..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 max-w-xs px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        />
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0"
-        >
-          + New Drawing
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Search drawings..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 sm:w-48 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          />
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0"
+          >
+            + New Drawing
+          </button>
+        </div>
       </div>
 
       {/* Project filter tabs + management buttons */}
@@ -155,7 +157,7 @@ export default function DashboardPage() {
         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Projects:</span>
         <button
           onClick={() => setSelectedProject(null)}
-          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             selectedProject === null
               ? "bg-blue-600 text-white"
               : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -165,7 +167,7 @@ export default function DashboardPage() {
         </button>
         <button
           onClick={() => setSelectedProject("unassigned")}
-          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             selectedProject === "unassigned"
               ? "bg-blue-600 text-white"
               : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -177,7 +179,7 @@ export default function DashboardPage() {
           <button
             key={project.id}
             onClick={() => setSelectedProject(selectedProject === project.id ? null : project.id)}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               selectedProject === project.id
                 ? "bg-blue-600 text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -191,7 +193,7 @@ export default function DashboardPage() {
         ))}
         <button
           onClick={() => setShowManageProjects(true)}
-          className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+          className="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
         >
           Manage
         </button>
@@ -205,7 +207,7 @@ export default function DashboardPage() {
             <button
               key={tag.id}
               onClick={() => toggleTag(tag.id)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 selectedTags.includes(tag.id)
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -219,14 +221,14 @@ export default function DashboardPage() {
           ))}
           <button
             onClick={() => setShowManageTags(true)}
-            className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            className="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
           >
             Manage
           </button>
           {selectedTags.length > 0 && (
             <button
               onClick={() => setSelectedTags([])}
-              className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               Clear
             </button>
@@ -240,7 +242,7 @@ export default function DashboardPage() {
           <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Tags:</span>
           <button
             onClick={() => setShowManageTags(true)}
-            className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            className="px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
           >
             Manage Tags
           </button>

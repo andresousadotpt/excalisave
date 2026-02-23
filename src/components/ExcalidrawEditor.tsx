@@ -142,10 +142,11 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
   return (
     <div className="h-full w-full relative">
       {/* Bottom-center: back button + floating bar + save indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
+      {/* On mobile, pushed up above Excalidraw's own bottom toolbar */}
+      <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 max-w-[calc(100vw-1rem)]">
         <button
           onClick={() => guardNavigation(() => router.push("/dashboard"))}
-          className="flex items-center justify-center w-9 h-9 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors"
+          className="flex items-center justify-center w-10 h-10 sm:w-9 sm:h-9 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors flex-shrink-0"
           title="Back to drawings"
         >
           <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

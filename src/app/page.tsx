@@ -3,8 +3,8 @@ import Image from "next/image";
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-center px-4">
-            <div className="text-center max-w-2xl">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-center px-4 py-12">
+            <div className="text-center max-w-2xl flex-1 flex flex-col items-center justify-center">
                 <div className="flex justify-center mb-4">
                     <Image
                         src="/excalisave-logo.png"
@@ -38,7 +38,7 @@ export default function LandingPage() {
                     </Link>
                 </div>
             </div>
-            <footer className="absolute bottom-6 flex flex-col items-center gap-3">
+            <footer className="flex flex-col items-center gap-3 mt-8">
                 <a
                     href="https://github.com/andresousadotpt/excalisave"
                     target="_blank"

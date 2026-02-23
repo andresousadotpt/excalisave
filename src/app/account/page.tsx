@@ -266,7 +266,7 @@ export default function AccountPage() {
             ? "Your PIN is configured. You can change or remove it."
             : "Set an 8-character alphanumeric PIN for faster vault unlocking instead of entering your password."}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className={`text-sm font-medium ${hasPinConfigured ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
             {hasPinConfigured ? "PIN configured" : "No PIN set"}
           </span>

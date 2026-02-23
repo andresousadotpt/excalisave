@@ -179,23 +179,27 @@ export default function AdminPage() {
 
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">Users</h2>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={userSearch}
-            onChange={(e) => setUserSearch(e.target.value)}
-            className="flex-1 max-w-xs px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
-          >
-            + Invite User
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="flex-1 sm:w-48 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              onClick={() => setShowCreate(true)}
+              className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+            >
+              + Invite User
+            </button>
+          </div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
@@ -210,7 +214,7 @@ export default function AdminPage() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{user.email}</td>
+                  <td className="px-4 py-2 text-gray-900 dark:text-gray-100 max-w-[200px] truncate">{user.email}</td>
                   <td className="px-4 py-2">
                     <select
                       value={user.role}
@@ -220,7 +224,7 @@ export default function AdminPage() {
                         (user.role === "super_admin") ||
                         (isAdminRole(user.role) && !isSuperAdmin(currentUserRole))
                       }
-                      className={`px-2 py-0.5 rounded text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
+                      className={`px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
                         user.role === "super_admin"
                           ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
                           : user.role === "admin"
@@ -256,7 +260,7 @@ export default function AdminPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleBan(user.id, !user.banned)}
-                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                        className={`text-xs px-3 py-1.5 rounded transition-colors ${
                           user.banned
                             ? "text-green-600 hover:text-green-700 dark:text-green-400"
                             : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
@@ -269,13 +273,13 @@ export default function AdminPage() {
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleDelete(user.id)}
-                              className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                              className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700"
                             >
                               Confirm
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(null)}
-                              className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                              className="text-xs px-3 py-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                             >
                               Cancel
                             </button>
@@ -283,7 +287,7 @@ export default function AdminPage() {
                         ) : (
                           <button
                             onClick={() => setDeleteConfirm(user.id)}
-                            className="text-xs text-red-500 hover:text-red-700"
+                            className="text-xs px-3 py-1.5 text-red-500 hover:text-red-700"
                           >
                             Delete
                           </button>
@@ -295,6 +299,89 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile card view */}
+        <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{user.email}</span>
+                {user.banned ? (
+                  <span className="text-red-500 text-xs font-medium flex-shrink-0">Banned</span>
+                ) : user.pendingInvite ? (
+                  <span className="text-blue-600 dark:text-blue-400 text-xs font-medium flex-shrink-0">Invited</span>
+                ) : !user.emailVerified ? (
+                  <span className="text-yellow-600 dark:text-yellow-400 text-xs font-medium flex-shrink-0">Unverified</span>
+                ) : (
+                  <span className="text-green-600 dark:text-green-400 text-xs font-medium flex-shrink-0">Active</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <select
+                  value={user.role}
+                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                  disabled={
+                    user.id === session?.user?.id ||
+                    (user.role === "super_admin") ||
+                    (isAdminRole(user.role) && !isSuperAdmin(currentUserRole))
+                  }
+                  className={`px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
+                    user.role === "super_admin"
+                      ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                      : user.role === "admin"
+                        ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                  {isSuperAdmin(currentUserRole) && (
+                    <option value="super_admin">super_admin</option>
+                  )}
+                </select>
+                <span>{user._count.drawings} drawings</span>
+                <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => handleBan(user.id, !user.banned)}
+                  className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                    user.banned
+                      ? "text-green-600 hover:text-green-700 dark:text-green-400"
+                      : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
+                  }`}
+                >
+                  {user.banned ? "Unban" : "Ban"}
+                </button>
+                {(!isAdminRole(user.role) || isSuperAdmin(currentUserRole)) && user.id !== session?.user?.id && (
+                  deleteConfirm === user.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleDelete(user.id)}
+                        className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(null)}
+                        className="text-xs px-3 py-1.5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeleteConfirm(user.id)}
+                      className="text-xs px-3 py-1.5 text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

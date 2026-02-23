@@ -109,8 +109,8 @@ function AcceptInviteForm() {
 
 export default function AcceptInvitePage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+      <div className="bg-white dark:bg-gray-900 p-5 sm:p-8 rounded-xl shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-white">
           Welcome to Excalisave
         </h1>

@@ -22,14 +22,14 @@ export function UnsavedChangesDialog({ open, onStay, onLeave }: UnsavedChangesDi
           <button
             type="button"
             onClick={onStay}
-            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg transition-colors"
           >
             Stay
           </button>
           <button
             type="button"
             onClick={onLeave}
-            className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
             Leave
           </button>

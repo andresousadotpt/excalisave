@@ -78,7 +78,7 @@ export function DrawingCard({
                   e.preventDefault();
                   onSettings(id);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
+                className="sm:opacity-0 sm:group-hover:opacity-100 p-2 -m-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all"
                 title="Drawing settings"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ export function DrawingCard({
                 e.preventDefault();
                 onDelete(id);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+              className="sm:opacity-0 sm:group-hover:opacity-100 p-2 -m-1 text-gray-400 hover:text-red-500 transition-all"
               title="Delete drawing"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -94,13 +94,13 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
               Add
             </button>
           </div>
-          <div className="flex gap-1.5 items-center">
+          <div className="flex gap-1 items-center">
             {COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setColor(color === c ? null : c)}
-                className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${color === c ? "border-gray-900 dark:border-white scale-110" : "border-transparent"}`}
+                className={`w-7 h-7 rounded-full border-2 flex-shrink-0 ${color === c ? "border-gray-900 dark:border-white scale-110" : "border-transparent"}`}
                 style={{ backgroundColor: c }}
               />
             ))}
@@ -124,8 +124,8 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
                         className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         autoFocus
                       />
-                      <button onClick={() => handleUpdate(project.id)} className="text-xs text-blue-600 hover:text-blue-700">Save</button>
-                      <button onClick={() => setEditId(null)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                      <button onClick={() => handleUpdate(project.id)} className="text-xs px-2 py-1.5 text-blue-600 hover:text-blue-700">Save</button>
+                      <button onClick={() => setEditId(null)} className="text-xs px-2 py-1.5 text-gray-500 hover:text-gray-700">Cancel</button>
                     </div>
                     <div className="flex gap-1 items-center">
                       {COLORS.map((c) => (
@@ -133,7 +133,7 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
                           key={c}
                           type="button"
                           onClick={() => setEditColor(editColor === c ? null : c)}
-                          className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${editColor === c ? "border-gray-900 dark:border-white" : "border-transparent"}`}
+                          className={`w-6 h-6 rounded-full border-2 flex-shrink-0 ${editColor === c ? "border-gray-900 dark:border-white" : "border-transparent"}`}
                           style={{ backgroundColor: c }}
                         />
                       ))}
@@ -148,17 +148,17 @@ export function ManageProjectsDialog({ open, projects, onClose, onUpdated }: Man
                     <span className="text-xs text-gray-500 dark:text-gray-400">{project.drawingCount} drawings</span>
                     <button
                       onClick={() => { setEditId(project.id); setEditName(project.name); setEditColor(project.color); }}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      className="text-xs px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       Edit
                     </button>
                     {deleteConfirm === project.id ? (
                       <div className="flex gap-1">
-                        <button onClick={() => handleDelete(project.id)} className="text-xs text-red-600 hover:text-red-700">Confirm</button>
-                        <button onClick={() => setDeleteConfirm(null)} className="text-xs text-gray-500">Cancel</button>
+                        <button onClick={() => handleDelete(project.id)} className="text-xs px-2 py-1.5 text-red-600 hover:text-red-700">Confirm</button>
+                        <button onClick={() => setDeleteConfirm(null)} className="text-xs px-2 py-1.5 text-gray-500">Cancel</button>
                       </div>
                     ) : (
-                      <button onClick={() => setDeleteConfirm(project.id)} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                      <button onClick={() => setDeleteConfirm(project.id)} className="text-xs px-2 py-1.5 text-red-500 hover:text-red-700">Delete</button>
                     )}
                   </>
                 )}

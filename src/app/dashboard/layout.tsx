@@ -11,7 +11,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <Navbar />
       <UnlockModal />
-      <main className="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full">{children}</main>
       <Footer />
     </div>
   );
