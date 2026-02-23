@@ -14,6 +14,7 @@ interface UserEntry {
   email: string;
   role: string;
   emailVerified: boolean;
+  banned: boolean;
   createdAt: string;
   _count: { drawings: number };
 }
@@ -23,6 +24,11 @@ export default function AdminPage() {
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createError, setCreateError] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [statsRes, usersRes] = await Promise.all([
@@ -43,6 +49,43 @@ export default function AdminPage() {
     if (res.ok) {
       setDeleteConfirm(null);
       fetchData();
+    }
+  }
+
+  async function handleBan(id: string, banned: boolean) {
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ banned }),
+    });
+    if (res.ok) fetchData();
+  }
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateError("");
+    setCreateLoading(true);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: createEmail, password: createPassword }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create user");
+      }
+
+      setShowCreate(false);
+      setCreateEmail("");
+      setCreatePassword("");
+      fetchData();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setCreateLoading(false);
     }
   }
 
@@ -70,8 +113,14 @@ export default function AdminPage() {
 
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Users</h2>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            + Create User
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -79,7 +128,7 @@ export default function AdminPage() {
               <tr>
                 <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Email</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Role</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Verified</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Status</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Drawings</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Joined</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Actions</th>
@@ -101,10 +150,12 @@ export default function AdminPage() {
                     </span>
                   </td>
                   <td className="px-4 py-2">
-                    {user.emailVerified ? (
-                      <span className="text-green-600 dark:text-green-400">Yes</span>
+                    {user.banned ? (
+                      <span className="text-red-500 text-xs font-medium">Banned</span>
+                    ) : !user.emailVerified ? (
+                      <span className="text-yellow-600 dark:text-yellow-400 text-xs font-medium">Unverified</span>
                     ) : (
-                      <span className="text-red-500">No</span>
+                      <span className="text-green-600 dark:text-green-400 text-xs font-medium">Active</span>
                     )}
                   </td>
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
@@ -115,7 +166,17 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-2">
                     {user.role !== "admin" && (
-                      <>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleBan(user.id, !user.banned)}
+                          className={`text-xs px-2 py-1 rounded transition-colors ${
+                            user.banned
+                              ? "text-green-600 hover:text-green-700 dark:text-green-400"
+                              : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
+                          }`}
+                        >
+                          {user.banned ? "Unban" : "Ban"}
+                        </button>
                         {deleteConfirm === user.id ? (
                           <div className="flex gap-1">
                             <button
@@ -139,7 +200,7 @@ export default function AdminPage() {
                             Delete
                           </button>
                         )}
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -148,6 +209,60 @@ export default function AdminPage() {
           </table>
         </div>
       </div>
+
+      {/* Create User Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl w-full max-w-sm mx-4">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              Create User
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              User will be pre-verified and must change password on first login.
+            </p>
+            <form onSubmit={handleCreateUser} className="space-y-3">
+              <input
+                type="email"
+                value={createEmail}
+                onChange={(e) => setCreateEmail(e.target.value)}
+                placeholder="Email"
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                autoFocus
+              />
+              <input
+                type="password"
+                value={createPassword}
+                onChange={(e) => setCreatePassword(e.target.value)}
+                placeholder="Temporary password (min 8 chars)"
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+              {createError && <p className="text-red-500 text-sm">{createError}</p>}
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreate(false);
+                    setCreateError("");
+                  }}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {createLoading ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

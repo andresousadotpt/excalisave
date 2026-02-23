@@ -34,7 +34,9 @@ export function Navbar() {
               </Link>
             </>
           )}
-          <span className="text-sm text-gray-600 dark:text-gray-400">{session?.user?.email}</span>
+          <Link href="/account" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+            {session?.user?.email}
+          </Link>
           <ThemeToggle />
           <button
             onClick={handleSignOut}

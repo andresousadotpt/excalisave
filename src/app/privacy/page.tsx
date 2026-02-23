@@ -158,13 +158,29 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
               7. Your Rights
             </h2>
-            <p>You have the right to:</p>
+            <p>Under GDPR and similar regulations, you have the right to:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>Access your account data</li>
-              <li>Request deletion of your account and all associated data</li>
-              <li>Export your drawings (via the Excalidraw editor)</li>
-              <li>Change your password at any time</li>
+              <li>
+                <strong>Right of access</strong> — view your account information
+              </li>
+              <li>
+                <strong>Right to data portability</strong> (Article 20) —
+                export all your data via Account Settings
+              </li>
+              <li>
+                <strong>Right to erasure</strong> (Article 17) — permanently
+                delete your account and all associated data via Account Settings
+              </li>
+              <li>
+                <strong>Right to rectification</strong> — change your password
+                at any time
+              </li>
             </ul>
+            <p className="mt-2">
+              All these actions are self-service and available in your{" "}
+              <strong>Account Settings</strong> page. No request to an
+              administrator is necessary.
+            </p>
           </section>
 
           <section>

@@ -68,9 +68,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
 
         if (result?.error) {
-          // NextAuth wraps the authorize() error message
           if (result.error.includes("verify")) {
             throw new Error("Please verify your email before signing in");
+          }
+          if (result.error.includes("suspended")) {
+            throw new Error("Your account has been suspended");
           }
           throw new Error("Invalid email or password");
         }

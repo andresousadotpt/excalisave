@@ -39,6 +39,16 @@ export default auth((req) => {
     }
   }
 
+  // Protect account routes
+  if (pathname.startsWith("/account") || pathname.startsWith("/api/auth/account")) {
+    if (!isLoggedIn) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+  }
+
   // Protect change-password
   if (pathname === "/change-password") {
     if (!isLoggedIn) {
@@ -66,6 +76,8 @@ export const config = {
     "/admin/:path*",
     "/api/drawings/:path*",
     "/api/admin/:path*",
+    "/account/:path*",
+    "/api/auth/account/:path*",
     "/change-password",
     "/login",
     "/register",

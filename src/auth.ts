@@ -41,6 +41,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Please verify your email before signing in");
         }
 
+        if (user.banned) {
+          console.warn(`[auth] Banned user ${user.id} attempted login`);
+          throw new Error("Your account has been suspended");
+        }
+
         const decryptedEmail = serverDecrypt(user.encryptedEmail);
 
         console.log(`[auth] User ${user.id} authenticated (role: ${user.role})`);
