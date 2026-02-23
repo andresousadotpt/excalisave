@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { decryptMasterKey, encryptMasterKey } from "@/lib/crypto";
@@ -65,6 +65,19 @@ export default function ChangePasswordPage() {
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to change password");
+      }
+
+      // Re-login to get a fresh JWT with mustChangePassword: false
+      const signInResult = await signIn("credentials", {
+        email: session?.user?.email,
+        password: newPassword,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // Password changed but re-login failed — send to login page
+        router.push("/login");
+        return;
       }
 
       // Redirect based on role
