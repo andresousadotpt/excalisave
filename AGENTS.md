@@ -138,6 +138,18 @@ npm run db:seed          # Seed admin user (idempotent)
 | `ADMIN_EMAIL` | No | Default admin email for seed |
 | `ADMIN_PASSWORD` | No | Default admin password for seed |
 
+## Git Conventions
+
+Use [Conventional Commits](https://www.conventionalcommits.org/). Format: `<type>(<scope>): <description>`
+
+Types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `ci`, `build`
+
+Examples:
+- `feat(auth): add email verification via Resend`
+- `fix(crypto): lazy-init Resend to avoid build crash`
+- `refactor(dashboard): extract drawing grid into component`
+- `chore(docker): add tsx to production image for seed script`
+
 ## Key Conventions
 
 - **Prisma 7**: Import from `@/generated/prisma/client`, NOT `@prisma/client`. Datasource URL in `prisma.config.ts` only.

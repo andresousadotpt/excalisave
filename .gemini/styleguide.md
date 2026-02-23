@@ -13,3 +13,4 @@ Read `AGENTS.md` at the project root for full project context, architecture, and
 - **API routes**: Always call `auth()` from `@/auth`, check `session.user.id` for ownership, `session.user.role` for admin.
 - **Security**: Never decrypt drawing data server-side. Never log master key material. Always validate `drawing.userId === session.user.id`.
 - **After schema changes**: Run `npx prisma generate` before building.
+- **Commits**: Use Conventional Commits (`<type>(<scope>): <description>`). Types: `feat`, `fix`, `refactor`, `docs`, `style`, `test`, `chore`, `perf`, `ci`, `build`.

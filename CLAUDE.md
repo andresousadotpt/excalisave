@@ -11,3 +11,4 @@ Read `AGENTS.md` for full project context, architecture, and conventions.
 - **Crypto**: `src/lib/crypto.ts` is client-only. Never import on server.
 - After schema changes: `npx prisma generate` before building.
 - Build check: `npm run build` to verify TypeScript + compilation.
+- **Commits**: Use Conventional Commits (`feat(scope): description`). See `AGENTS.md` for details.
