@@ -29,6 +29,8 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   drawings           Drawing[]
+  projects           Project[]
+  tags               Tag[]
 }
 
 model Setting {
@@ -37,15 +39,55 @@ model Setting {
 }
 
 model Drawing {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   encryptedName String
-  encryptedData String   @db.Text
+  encryptedData String       @db.Text
   iv            String
-  thumbnail     String?  @db.Text
+  thumbnail     String?      @db.Text
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  tags          DrawingTag[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@index([userId])
+  @@index([projectId])
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  encryptedName String
+  color         String?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drawings      Drawing[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Tag {
+  id            String       @id @default(cuid())
+  encryptedName String
+  color         String?
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drawings      DrawingTag[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId])
+}
+
+model DrawingTag {
+  drawingId String
+  tagId     String
+  drawing   Drawing @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([drawingId, tagId])
+  @@index([tagId])
 }

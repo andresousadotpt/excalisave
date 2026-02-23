@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hashEmail, serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 import { sendInviteEmail, getAppUrl } from "@/lib/email";
+import { isAdminRole } from "@/lib/roles";
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
@@ -16,7 +17,7 @@ function maskEmail(email: string): string {
 // GET /api/admin/users - List all users
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -57,7 +58,7 @@ const createUserSchema = z.object({
 // POST /api/admin/users - Admin invites a user (sends invite email to set password)
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

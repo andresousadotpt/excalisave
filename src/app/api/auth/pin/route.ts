@@ -54,3 +54,31 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// DELETE /api/auth/pin - Remove PIN
+export async function DELETE(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed, resetIn } = rateLimit(`pin:${ip}`, 5, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(resetIn / 1000)) } }
+    );
+  }
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      encryptedMasterKeyPin: null,
+      masterKeyPinSalt: null,
+      masterKeyPinIv: null,
+    },
+  });
+
+  return NextResponse.json({ success: true });
+}

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { isAdminRole } from "@/lib/roles";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -21,7 +22,7 @@ export default auth((req) => {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    if (user?.role !== "admin") {
+    if (!isAdminRole(user?.role ?? "")) {
       if (pathname.startsWith("/api/admin")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -32,8 +33,12 @@ export default auth((req) => {
     }
   }
 
-  // Protect drawing API routes
-  if (pathname.startsWith("/api/drawings")) {
+  // Protect drawing, project, and tag API routes
+  if (
+    pathname.startsWith("/api/drawings") ||
+    pathname.startsWith("/api/projects") ||
+    pathname.startsWith("/api/tags")
+  ) {
     if (!isLoggedIn) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -84,6 +89,8 @@ export const config = {
     "/draw/:path*",
     "/admin/:path*",
     "/api/drawings/:path*",
+    "/api/projects/:path*",
+    "/api/tags/:path*",
     "/api/admin/:path*",
     "/api/auth/pin",
     "/api/auth/change-password",

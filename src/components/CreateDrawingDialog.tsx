@@ -5,9 +5,16 @@ import { useMasterKey } from "@/hooks/useMasterKey";
 import { encryptDrawing } from "@/lib/crypto";
 import { useRouter } from "next/navigation";
 
+interface ProjectOption {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
 interface CreateDrawingDialogProps {
   open: boolean;
   onClose: () => void;
+  projects?: ProjectOption[];
 }
 
 const EMPTY_SCENE = JSON.stringify({
@@ -18,8 +25,9 @@ const EMPTY_SCENE = JSON.stringify({
   files: {},
 });
 
-export function CreateDrawingDialog({ open, onClose }: CreateDrawingDialogProps) {
+export function CreateDrawingDialog({ open, onClose, projects }: CreateDrawingDialogProps) {
   const [name, setName] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [loading, setLoading] = useState(false);
   const { masterKey } = useMasterKey();
   const router = useRouter();
@@ -37,7 +45,12 @@ export function CreateDrawingDialog({ open, onClose }: CreateDrawingDialogProps)
       const res = await fetch("/api/drawings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), encryptedData, iv }),
+        body: JSON.stringify({
+          name: name.trim(),
+          encryptedData,
+          iv,
+          ...(projectId ? { projectId } : {}),
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to create drawing");
@@ -68,6 +81,20 @@ export function CreateDrawingDialog({ open, onClose }: CreateDrawingDialogProps)
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             autoFocus
           />
+          {projects && projects.length > 0 && (
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            >
+              <option value="">No project</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex gap-2 justify-end">
             <button
               type="button"

@@ -8,6 +8,7 @@ const createSchema = z.object({
   name: z.string().min(1).max(255),
   encryptedData: z.string().max(15_000_000),
   iv: z.string().max(100),
+  projectId: z.string().optional(),
 });
 
 // GET /api/drawings - List user's drawings
@@ -23,6 +24,10 @@ export async function GET() {
       id: true,
       encryptedName: true,
       thumbnail: true,
+      projectId: true,
+      tags: {
+        select: { tag: { select: { id: true } } },
+      },
       createdAt: true,
       updatedAt: true,
     },
@@ -33,6 +38,8 @@ export async function GET() {
     id: d.id,
     name: serverDecrypt(d.encryptedName),
     thumbnail: d.thumbnail,
+    projectId: d.projectId,
+    tagIds: d.tags.map((t) => t.tag.id),
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
@@ -49,7 +56,15 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, encryptedData, iv } = createSchema.parse(body);
+    const { name, encryptedData, iv, projectId } = createSchema.parse(body);
+
+    // Validate project ownership if provided
+    if (projectId) {
+      const project = await prisma.project.findUnique({ where: { id: projectId } });
+      if (!project || project.userId !== session.user.id) {
+        return NextResponse.json({ error: "Project not found" }, { status: 400 });
+      }
+    }
 
     const drawing = await prisma.drawing.create({
       data: {
@@ -57,6 +72,7 @@ export async function POST(req: Request) {
         encryptedData,
         iv,
         userId: session.user.id,
+        projectId: projectId ?? null,
       },
       select: {
         id: true,

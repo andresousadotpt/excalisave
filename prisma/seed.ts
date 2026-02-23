@@ -59,6 +59,16 @@ async function main() {
     } else {
       console.log(`Admin user ${adminEmail} already exists, skipping`);
     }
+
+    // Upgrade seeded admin to super_admin
+    if (existing.role === "admin") {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: "super_admin" },
+      });
+      console.log(`Admin user ${adminEmail} upgraded to super_admin`);
+    }
+
     return;
   }
 
@@ -70,7 +80,7 @@ async function main() {
       emailHash: emailH,
       encryptedEmail,
       passwordHash,
-      role: "admin",
+      role: "super_admin",
       emailVerified: true,
       mustChangePassword: true,
       encryptedMasterKey: "",

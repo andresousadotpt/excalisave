@@ -2,18 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminRole, isSuperAdmin } from "@/lib/roles";
 
 type Params = { params: Promise<{ id: string }> };
 
 const updateSchema = z.object({
   banned: z.boolean().optional(),
-  role: z.enum(["user", "admin"]).optional(),
+  role: z.enum(["user", "admin", "super_admin"]).optional(),
 });
 
 // PATCH /api/admin/users/[id] - Update user (ban/unban)
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -34,6 +35,31 @@ export async function PATCH(req: Request, { params }: Params) {
         { error: "Cannot modify your own account" },
         { status: 400 }
       );
+    }
+
+    // Role change authorization
+    if (data.role !== undefined) {
+      // Cannot modify super_admin's role
+      if (user.role === "super_admin") {
+        return NextResponse.json(
+          { error: "Cannot modify a super admin's role" },
+          { status: 403 }
+        );
+      }
+      // Only super_admin can assign/remove super_admin role
+      if (data.role === "super_admin" && !isSuperAdmin(session.user.role)) {
+        return NextResponse.json(
+          { error: "Only super admins can assign super admin role" },
+          { status: 403 }
+        );
+      }
+      // Only super_admin can change another admin's role
+      if (isAdminRole(user.role) && !isSuperAdmin(session.user.role)) {
+        return NextResponse.json(
+          { error: "Only super admins can change another admin's role" },
+          { status: 403 }
+        );
+      }
     }
 
     const updated = await prisma.user.update({
@@ -62,7 +88,7 @@ export async function PATCH(req: Request, { params }: Params) {
 // DELETE /api/admin/users/[id] - Delete a user
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -80,9 +106,16 @@ export async function DELETE(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  if (user.role === "admin") {
+  if (user.role === "super_admin") {
     return NextResponse.json(
-      { error: "Cannot delete another admin" },
+      { error: "Cannot delete a super admin" },
+      { status: 400 }
+    );
+  }
+
+  if (isAdminRole(user.role) && !isSuperAdmin(session.user.role)) {
+    return NextResponse.json(
+      { error: "Only super admins can delete other admins" },
       { status: 400 }
     );
   }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {signOut, useSession} from "next-auth/react";
 import {ThemeToggle} from "@/components/ThemeToggle";
+import {isAdminRole} from "@/lib/roles";
 
 export function Navbar() {
     const {data: session} = useSession();
@@ -29,7 +30,7 @@ export function Navbar() {
                     Excalisave
                 </Link>
                 <div className="flex items-center gap-4">
-                    {session?.user?.role === "admin" && (
+                    {isAdminRole(session?.user?.role ?? "") && (
                         <>
                             <Link
                                 href="/dashboard"

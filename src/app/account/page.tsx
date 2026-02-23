@@ -8,9 +8,10 @@ import {
   encryptMasterKey,
   generateMasterKey,
 } from "@/lib/crypto";
+import { SetPinDialog } from "@/components/SetPinDialog";
 
 export default function AccountPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { masterKey, setMasterKey, clearMasterKey } = useMasterKey();
   const [showDelete, setShowDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -25,6 +26,31 @@ export default function AccountPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [removingPin, setRemovingPin] = useState(false);
+  const [pinMessage, setPinMessage] = useState("");
+
+  const hasPinConfigured = !!(session?.user?.encryptedMasterKeyPin);
+
+  async function handleRemovePin() {
+    if (!confirm("Are you sure you want to remove your PIN? You'll need to use your password to unlock.")) return;
+    setRemovingPin(true);
+    setPinMessage("");
+    try {
+      const res = await fetch("/api/auth/pin", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to remove PIN");
+      }
+      await update();
+      setPinMessage("PIN removed successfully");
+    } catch (err) {
+      setPinMessage(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setRemovingPin(false);
+    }
+  }
 
   async function handleExport() {
     setExporting(true);
@@ -231,6 +257,51 @@ export default function AccountPage() {
           </button>
         </form>
       </div>
+
+      {/* PIN Management */}
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Unlock PIN</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          {hasPinConfigured
+            ? "Your PIN is configured. You can change or remove it."
+            : "Set an 8-character alphanumeric PIN for faster vault unlocking instead of entering your password."}
+        </p>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-medium ${hasPinConfigured ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"}`}>
+            {hasPinConfigured ? "PIN configured" : "No PIN set"}
+          </span>
+          <button
+            onClick={() => { setPinMessage(""); setShowPinDialog(true); }}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {hasPinConfigured ? "Change PIN" : "Set PIN"}
+          </button>
+          {hasPinConfigured && (
+            <button
+              onClick={handleRemovePin}
+              disabled={removingPin}
+              className="px-4 py-2 text-sm text-red-600 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50 transition-colors"
+            >
+              {removingPin ? "Removing..." : "Remove PIN"}
+            </button>
+          )}
+        </div>
+        {pinMessage && (
+          <p className={`text-sm mt-2 ${pinMessage.includes("success") ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+            {pinMessage}
+          </p>
+        )}
+      </div>
+
+      {showPinDialog && masterKey && (
+        <SetPinDialog
+          masterKey={masterKey}
+          onClose={() => {
+            setShowPinDialog(false);
+            update();
+          }}
+        />
+      )}
 
       {/* Data Export (GDPR) */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">

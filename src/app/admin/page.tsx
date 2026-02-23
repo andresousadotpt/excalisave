@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { isAdminRole, isSuperAdmin } from "@/lib/roles";
 
 interface Stats {
   totalUsers: number;
@@ -21,6 +23,8 @@ interface UserEntry {
 }
 
 export default function AdminPage() {
+  const { data: session } = useSession();
+  const currentUserRole = session?.user?.role ?? "user";
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,17 +212,28 @@ export default function AdminPage() {
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{user.email}</td>
                   <td className="px-4 py-2">
-                    <button
-                      onClick={() => handleRoleChange(user.id, user.role === "admin" ? "user" : "admin")}
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
-                        user.role === "admin"
-                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
-                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                      }`}
-                      title={`Click to change to ${user.role === "admin" ? "user" : "admin"}`}
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      disabled={
+                        user.id === session?.user?.id ||
+                        (user.role === "super_admin") ||
+                        (isAdminRole(user.role) && !isSuperAdmin(currentUserRole))
+                      }
+                      className={`px-2 py-0.5 rounded text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
+                        user.role === "super_admin"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                          : user.role === "admin"
+                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {user.role}
-                    </button>
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                      {isSuperAdmin(currentUserRole) && (
+                        <option value="super_admin">super_admin</option>
+                      )}
+                    </select>
                   </td>
                   <td className="px-4 py-2">
                     {user.banned ? (
@@ -249,28 +264,30 @@ export default function AdminPage() {
                       >
                         {user.banned ? "Unban" : "Ban"}
                       </button>
-                      {deleteConfirm === user.id ? (
-                        <div className="flex gap-1">
+                      {(!isAdminRole(user.role) || isSuperAdmin(currentUserRole)) && user.id !== session?.user?.id && (
+                        deleteConfirm === user.id ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleDelete(user.id)}
+                              className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={() => handleDelete(user.id)}
-                            className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                            onClick={() => setDeleteConfirm(user.id)}
+                            className="text-xs text-red-500 hover:text-red-700"
                           >
-                            Confirm
+                            Delete
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirm(null)}
-                            className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteConfirm(user.id)}
-                          className="text-xs text-red-500 hover:text-red-700"
-                        >
-                          Delete
-                        </button>
+                        )
                       )}
                     </div>
                   </td>

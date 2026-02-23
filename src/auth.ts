@@ -87,7 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id as string;
         token.role = (user.role as string) || "user";
@@ -99,6 +99,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.masterKeyPinSalt = user.masterKeyPinSalt;
         token.masterKeyPinIv = user.masterKeyPinIv;
         token.lastChecked = Date.now();
+      }
+
+      // Refresh PIN fields when session.update() is called
+      if (trigger === "update") {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { encryptedMasterKeyPin: true, masterKeyPinSalt: true, masterKeyPinIv: true },
+          });
+          if (dbUser) {
+            token.encryptedMasterKeyPin = dbUser.encryptedMasterKeyPin ?? undefined;
+            token.masterKeyPinSalt = dbUser.masterKeyPinSalt ?? undefined;
+            token.masterKeyPinIv = dbUser.masterKeyPinIv ?? undefined;
+          }
+        } catch {
+          // DB check failed, continue with cached token
+        }
       }
 
       // Re-check user status every 5 minutes

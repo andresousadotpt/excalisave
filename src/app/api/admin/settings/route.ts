@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { getSetting, setSetting } from "@/lib/settings";
+import { isAdminRole } from "@/lib/roles";
 
 // GET /api/admin/settings - Get all settings
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -24,7 +25,7 @@ const updateSchema = z.object({
 // PATCH /api/admin/settings - Update settings
 export async function PATCH(req: Request) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
+  if (!session?.user?.id || !isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -9,6 +9,7 @@ const updateSchema = z.object({
   encryptedData: z.string().max(15_000_000).optional(),
   iv: z.string().max(100).optional(),
   thumbnail: z.string().max(2_000_000).nullable().optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
@@ -21,7 +22,13 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const { id } = await params;
-  const drawing = await prisma.drawing.findUnique({ where: { id } });
+  const drawing = await prisma.drawing.findUnique({
+    where: { id },
+    include: {
+      project: { select: { id: true, encryptedName: true, color: true } },
+      tags: { select: { tag: { select: { id: true, encryptedName: true, color: true } } } },
+    },
+  });
 
   if (!drawing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -35,6 +42,14 @@ export async function GET(_req: Request, { params }: Params) {
     ...drawing,
     name: serverDecrypt(drawing.encryptedName),
     encryptedName: undefined,
+    project: drawing.project
+      ? { id: drawing.project.id, name: serverDecrypt(drawing.project.encryptedName), color: drawing.project.color }
+      : null,
+    tags: drawing.tags.map((t) => ({
+      id: t.tag.id,
+      name: serverDecrypt(t.tag.encryptedName),
+      color: t.tag.color,
+    })),
   });
 }
 
@@ -58,11 +73,20 @@ export async function PUT(req: Request, { params }: Params) {
 
   try {
     const body = await req.json();
-    const { name, ...rest } = updateSchema.parse(body);
+    const { name, projectId, ...rest } = updateSchema.parse(body);
 
     const data: Record<string, unknown> = { ...rest };
     if (name !== undefined) {
       data.encryptedName = serverEncrypt(name);
+    }
+    if (projectId !== undefined) {
+      if (projectId !== null) {
+        const project = await prisma.project.findUnique({ where: { id: projectId } });
+        if (!project || project.userId !== session.user.id) {
+          return NextResponse.json({ error: "Project not found" }, { status: 400 });
+        }
+      }
+      data.projectId = projectId;
     }
 
     const updated = await prisma.drawing.update({

@@ -9,12 +9,18 @@ interface DrawingData {
   name: string;
   encryptedData: string;
   iv: string;
+  projectId: string | null;
+  project: { id: string; name: string; color: string | null } | null;
+  tags: { id: string; name: string; color: string | null }[];
 }
 
 export function useDrawing(drawingId: string) {
   const { masterKey, isUnlocked } = useMasterKey();
   const [sceneData, setSceneData] = useState<string | null>(null);
   const [drawingName, setDrawingName] = useState<string>("");
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const [projectColor, setProjectColor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +35,9 @@ export function useDrawing(drawingId: string) {
 
         const drawing: DrawingData = await res.json();
         setDrawingName(drawing.name);
+        setProjectId(drawing.projectId);
+        setProjectName(drawing.project?.name ?? null);
+        setProjectColor(drawing.project?.color ?? null);
 
         const decrypted = await decryptDrawing(
           drawing.encryptedData,
@@ -62,5 +71,5 @@ export function useDrawing(drawingId: string) {
     [drawingId, masterKey]
   );
 
-  return { sceneData, drawingName, loading, error, saveDrawing };
+  return { sceneData, drawingName, projectId, projectName, projectColor, loading, error, saveDrawing };
 }
