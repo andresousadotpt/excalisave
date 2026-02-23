@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { AuthForm } from "@/components/AuthForm";
 
 export default function RegisterPage() {
@@ -14,7 +15,9 @@ export default function RegisterPage() {
         {registrationEnabled ? (
           <>
             <div className="flex justify-center">
-              <AuthForm mode="register" />
+              <Suspense>
+                <AuthForm mode="register" />
+              </Suspense>
             </div>
             <p className="text-center mt-4 text-sm text-gray-600">
               Already have an account?{" "}
