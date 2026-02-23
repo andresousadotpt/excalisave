@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String
+  encryptedMasterKey String
+  masterKeySalt      String
+  masterKeyIv        String
+  role               String    @default("user")
+  emailVerified      Boolean   @default(false)
+  verificationToken  String?   @unique
+  mustChangePassword Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  drawings           Drawing[]
+}
+
+model Drawing {
+  id            String   @id @default(cuid())
+  name          String
+  encryptedData String   @db.Text
+  iv            String
+  thumbnail     String?  @db.Text
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
