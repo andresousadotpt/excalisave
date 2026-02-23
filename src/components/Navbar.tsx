@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import {signOut, useSession} from "next-auth/react";
-import {useMasterKey} from "@/hooks/useMasterKey";
 import {ThemeToggle} from "@/components/ThemeToggle";
 
 export function Navbar() {
     const {data: session} = useSession();
-    const {clearMasterKey} = useMasterKey();
 
     async function handleSignOut() {
-        clearMasterKey();
         await signOut({redirectTo: "/login"});
     }
 
