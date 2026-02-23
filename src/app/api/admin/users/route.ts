@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hashEmail, serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
+import { sendInviteEmail } from "@/lib/email";
 
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
@@ -26,6 +27,7 @@ export async function GET() {
       role: true,
       emailVerified: true,
       banned: true,
+      inviteToken: true,
       createdAt: true,
       _count: {
         select: { drawings: true },
@@ -40,6 +42,7 @@ export async function GET() {
     role: u.role,
     emailVerified: u.emailVerified,
     banned: u.banned,
+    pendingInvite: !!u.inviteToken,
     createdAt: u.createdAt,
     _count: u._count,
   }));
@@ -49,10 +52,9 @@ export async function GET() {
 
 const createUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
 });
 
-// POST /api/admin/users - Admin creates a user (pre-verified, must change password)
+// POST /api/admin/users - Admin invites a user (sends invite email to set password)
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "admin") {
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { email, password } = createUserSchema.parse(body);
+    const { email } = createUserSchema.parse(body);
 
     const emailH = hashEmail(email);
     const existing = await prisma.user.findUnique({
@@ -75,23 +77,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const inviteToken = crypto.randomBytes(32).toString("hex");
     const encryptedEmail = serverEncrypt(email.toLowerCase().trim());
 
     await prisma.user.create({
       data: {
         emailHash: emailH,
         encryptedEmail,
-        passwordHash,
+        passwordHash: "",
         emailVerified: true,
-        mustChangePassword: true,
+        inviteToken,
         encryptedMasterKey: "",
         masterKeySalt: "",
         masterKeyIv: "",
       },
     });
 
-    console.log(`[admin] User created by ${session.user.id} for ${emailH.slice(0, 8)}...`);
+    await sendInviteEmail(email, inviteToken);
+
+    console.log(`[admin] User invited by ${session.user.id} for ${emailH.slice(0, 8)}...`);
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -101,7 +105,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.error("[admin] Create user error:", error);
+    console.error("[admin] Invite user error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

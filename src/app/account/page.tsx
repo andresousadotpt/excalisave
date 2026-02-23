@@ -1,17 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useMasterKey } from "@/hooks/useMasterKey";
+import {
+  decryptMasterKey,
+  encryptMasterKey,
+  generateMasterKey,
+} from "@/lib/crypto";
 
 export default function AccountPage() {
   const { data: session } = useSession();
-  const { clearMasterKey } = useMasterKey();
+  const { masterKey, setMasterKey, clearMasterKey } = useMasterKey();
   const [showDelete, setShowDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   async function handleExport() {
     setExporting(true);
@@ -32,6 +45,88 @@ export default function AccountPage() {
       console.error("Export failed:", error);
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      let keyMaterial: Record<string, string> = {};
+      const hasKeyMaterial =
+        session?.user?.encryptedMasterKey &&
+        session?.user?.masterKeySalt &&
+        session?.user?.masterKeyIv;
+
+      if (hasKeyMaterial) {
+        // Decrypt master key (use in-memory if available, otherwise decrypt from session)
+        let key = masterKey;
+        if (!key) {
+          key = await decryptMasterKey(
+            session.user.encryptedMasterKey,
+            session.user.masterKeySalt,
+            session.user.masterKeyIv,
+            currentPassword
+          );
+        }
+        // Re-encrypt master key with new password
+        const encrypted = await encryptMasterKey(key, newPassword);
+        keyMaterial = {
+          encryptedMasterKey: encrypted.encryptedKey,
+          masterKeySalt: encrypted.salt,
+          masterKeyIv: encrypted.iv,
+        };
+        setMasterKey(key);
+      } else {
+        // No master key yet — generate one
+        const key = await generateMasterKey();
+        const encrypted = await encryptMasterKey(key, newPassword);
+        keyMaterial = {
+          encryptedMasterKey: encrypted.encryptedKey,
+          masterKeySalt: encrypted.salt,
+          masterKeyIv: encrypted.iv,
+        };
+        setMasterKey(key);
+      }
+
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          ...keyMaterial,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to change password");
+      }
+
+      // Re-login to get a fresh JWT with updated key material
+      await signIn("credentials", {
+        email: session?.user?.email,
+        password: newPassword,
+        redirect: false,
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess("Password changed successfully");
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setPasswordLoading(false);
     }
   }
 
@@ -78,6 +173,63 @@ export default function AccountPage() {
             {session?.user?.role}
           </p>
         </div>
+      </div>
+
+      {/* Change Password */}
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Change Password</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Your encryption key will be re-wrapped with your new password. Your drawings remain encrypted with the same master key.
+        </p>
+        <form onSubmit={handleChangePassword} className="space-y-3 max-w-sm">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+              Current Password
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+              New Password
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+          {passwordSuccess && <p className="text-green-600 dark:text-green-400 text-sm">{passwordSuccess}</p>}
+          <button
+            type="submit"
+            disabled={passwordLoading}
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {passwordLoading ? "Changing..." : "Change Password"}
+          </button>
+        </form>
       </div>
 
       {/* Data Export (GDPR) */}

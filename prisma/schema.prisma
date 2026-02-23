@@ -18,6 +18,7 @@ model User {
   role               String    @default("user")
   emailVerified      Boolean   @default(false)
   verificationToken  String?   @unique
+  inviteToken        String?   @unique
   mustChangePassword Boolean   @default(false)
   banned             Boolean   @default(false)
   createdAt          DateTime  @default(now())

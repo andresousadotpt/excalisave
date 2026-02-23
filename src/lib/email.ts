@@ -4,11 +4,15 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+function getAppUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || "http://localhost:3000";
+}
+
 export async function sendVerificationEmail(
   email: string,
   token: string
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || "http://localhost:3000";
+  const appUrl = getAppUrl();
   const verifyUrl = `${appUrl}/api/auth/verify?token=${token}`;
   const from = process.env.EMAIL_FROM || "noreply@example.com";
 
@@ -28,6 +32,33 @@ export async function sendVerificationEmail(
         </p>
         <p style="color: #999; font-size: 12px;">
           Or copy this link: ${verifyUrl}
+        </p>
+      </div>
+    `,
+  });
+}
+
+export async function sendInviteEmail(email: string, token: string) {
+  const appUrl = getAppUrl();
+  const inviteUrl = `${appUrl}/accept-invite?token=${token}`;
+  const from = process.env.EMAIL_FROM || "noreply@example.com";
+
+  await getResend().emails.send({
+    from,
+    to: email,
+    subject: "You've been invited to Excalisave",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2>Welcome to Excalisave</h2>
+        <p>You've been invited to join Excalisave. Click the button below to set your password and get started:</p>
+        <a href="${inviteUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; margin: 16px 0;">
+          Set Your Password
+        </a>
+        <p style="color: #666; font-size: 14px;">
+          Your drawings will be end-to-end encrypted with a key derived from your password.
+        </p>
+        <p style="color: #999; font-size: 12px;">
+          Or copy this link: ${inviteUrl}
         </p>
       </div>
     `,
