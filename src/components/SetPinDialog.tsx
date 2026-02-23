@@ -65,7 +65,7 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
           Set a PIN for quick unlock
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Set an 8-character alphanumeric PIN so you can unlock your vault faster next time.
+          Your vault locks every time you close the browser. A PIN lets you unlock it quickly without typing your full password each time.
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
