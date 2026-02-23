@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function sendVerificationEmail(
   email: string,
@@ -10,7 +12,7 @@ export async function sendVerificationEmail(
   const verifyUrl = `${appUrl}/api/auth/verify?token=${token}`;
   const from = process.env.EMAIL_FROM || "noreply@example.com";
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from,
     to: email,
     subject: "Verify your Excalisave account",
