@@ -35,7 +35,7 @@ Edit `.env` with your values. At minimum you need:
 
 ```bash
 npx prisma migrate dev --name init   # Create tables
-npm run db:seed                       # Create admin user (optional)
+npm run db:seed                       # Create super admin user (optional)
 ```
 
 ### 4. Start developing
@@ -54,11 +54,11 @@ If you prefer not to install PostgreSQL locally:
 docker compose up --build
 ```
 
-This starts both the app and a PostgreSQL instance. The admin user is seeded automatically from `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars.
+This starts both the app and a PostgreSQL instance. The super admin user is seeded automatically from `ADMIN_EMAIL` and `ADMIN_PASSWORD` env vars.
 
 ## Project Overview
 
-Excalisave is a self-hosted Excalidraw app with end-to-end encryption. Read [`AGENTS.md`](./AGENTS.md) for the full architecture reference, including project structure, E2EE model, auth flow, and API patterns.
+Excalisave is a self-hosted Excalidraw app with end-to-end encryption. Read [`AGENTS.md`](./AGENTS.md) for the full architecture reference, including project structure, E2EE model, auth flow, role hierarchy, and API patterns.
 
 Key things to know:
 
@@ -66,6 +66,8 @@ Key things to know:
 - **Prisma 7** — import from `@/generated/prisma/client`. Database URL is in `prisma.config.ts`, not in the schema.
 - **Next.js 16** — route protection uses `proxy.ts` (not `middleware.ts`). Route params are async (`Promise<{ id: string }>`).
 - **Zod v4** — use `error.issues`, not `error.errors`.
+- **Roles** — use `isAdminRole()` / `isSuperAdmin()` from `src/lib/roles.ts` for admin checks. Never hardcode `=== "admin"`.
+- **Organization** — drawings can be grouped into Projects (one-to-many) and tagged with Tags (many-to-many). Names are server-encrypted.
 
 ## Available Scripts
 
@@ -76,7 +78,7 @@ Key things to know:
 | `npm run lint` | Run ESLint |
 | `npm run db:migrate` | Run Prisma migrations |
 | `npm run db:generate` | Regenerate Prisma client |
-| `npm run db:seed` | Seed admin user (idempotent) |
+| `npm run db:seed` | Seed super admin user (idempotent) |
 
 ## Making Changes
 
@@ -121,8 +123,10 @@ This project handles encrypted user data. Please keep these rules in mind:
 
 - Never decrypt drawing data server-side
 - Never log or expose master key material
-- Always validate ownership (`drawing.userId === session.user.id`)
-- Admin routes must check `session.user.role === "admin"`
+- Always validate ownership (`drawing.userId === session.user.id`, same for projects and tags)
+- Admin routes must check role via `isAdminRole(session.user.role)`, not `=== "admin"`
+- Super admin operations must use `isSuperAdmin(session.user.role)`
+- PII (emails, drawing/project/tag names) must be encrypted at rest with `ENCRYPTION_KEY`
 - Use bcrypt for password hashing, PBKDF2 (600k iterations) for key derivation
 - Generate fresh random IVs for every encryption operation
 

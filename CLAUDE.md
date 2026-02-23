@@ -9,7 +9,8 @@ Read `AGENTS.md` for full project context, architecture, and conventions.
 - **Next.js 16**: `proxy.ts` for route protection, not `middleware.ts`. Params are `Promise<{ id: string }>`.
 - **Excalidraw**: Dynamic import with `ssr: false` only.
 - **Client Crypto**: `src/lib/crypto.ts` is client-only. Never import on server.
-- **Server Crypto**: `src/lib/server-crypto.ts` for PII encryption (emails, drawing names). Uses `ENCRYPTION_KEY` env var.
+- **Server Crypto**: `src/lib/server-crypto.ts` for PII encryption (emails, drawing/project/tag names). Uses `ENCRYPTION_KEY` env var.
+- **Roles**: Use `isAdminRole()` / `isSuperAdmin()` from `src/lib/roles.ts`. Never hardcode `=== "admin"`.
 - After schema changes: `npx prisma generate` before building.
 - Build check: `npm run build` to verify TypeScript + compilation.
 - **Commits**: Use Conventional Commits (`feat(scope): description`). See `AGENTS.md` for details.

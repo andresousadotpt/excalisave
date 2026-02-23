@@ -5,8 +5,14 @@ A self-hosted [Excalidraw](https://excalidraw.com) drawing manager with end-to-e
 ## Features
 
 - End-to-end encrypted drawings (client-side encryption with a master key)
+- **Projects and tags** for organizing drawings with color-coded labels
+- **Quick unlock PIN** — optional 8-char PIN for faster vault unlocking
 - User authentication with email verification
-- Admin user with configurable credentials
+- **Role hierarchy** — super admin, admin, and regular user roles
+- Admin panel with user management, role assignment, and invite system
+- Dashboard with project filter tabs, tag filter chips, and search
+- Bottom-center floating bar in the editor for quick drawing navigation
+- Auto-save with unsaved changes warnings
 - Self-hostable with Docker
 
 ## Tech Stack
@@ -44,7 +50,7 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 
 On startup, the container automatically:
 1. Runs Prisma migrations (`prisma migrate deploy`)
-2. Seeds the admin user
+2. Seeds the super admin user
 3. Starts the Next.js server
 
 ## Environment Variables
@@ -58,6 +64,7 @@ On startup, the container automatically:
 | `REGISTRATION_ENABLED` | `true` | Allow new user registration |
 | `RESEND_API_KEY` | — | API key for sending emails via Resend |
 | `EMAIL_FROM` | `Excalisave <noreply@example.com>` | Sender address for emails |
+| `ENCRYPTION_KEY` | — | AES-256-GCM key for server-side PII encryption |
 | `ADMIN_EMAIL` | `admin@example.com` | Default admin account email |
 | `ADMIN_PASSWORD` | `change-me-on-first-login` | Default admin account password |
 
