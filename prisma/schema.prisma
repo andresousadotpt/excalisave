@@ -26,6 +26,8 @@ model User {
   inviteTokenExpiresAt DateTime?
   mustChangePassword Boolean   @default(false)
   banned             Boolean   @default(false)
+  encryptedLibrary   String?   @db.Text
+  libraryIv          String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   drawings           Drawing[]

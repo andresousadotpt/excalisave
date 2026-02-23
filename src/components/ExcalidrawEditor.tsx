@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDrawing } from "@/hooks/useDrawing";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -8,6 +8,7 @@ import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { DrawingFloatingBar } from "@/components/DrawingFloatingBar";
 import { useMasterKey } from "@/hooks/useMasterKey";
+import { encryptDrawing, decryptDrawing } from "@/lib/crypto";
 import dynamic from "next/dynamic";
 import "@excalidraw/excalidraw/index.css";
 
@@ -25,12 +26,14 @@ interface ExcalidrawEditorProps {
 
 export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
   const router = useRouter();
-  const { isUnlocked } = useMasterKey();
+  const { masterKey, isUnlocked } = useMasterKey();
   const { sceneData, drawingName, projectName, projectColor, loading, error, saveDrawing } = useDrawing(drawingId);
   const excalidrawAPIRef = useRef<any>(null);
   const lastFingerprintRef = useRef<string | null>(null);
   const [initialData, setInitialData] = useState<any>(null);
   const [ready, setReady] = useState(false);
+  const librarySaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [libraryItems, setLibraryItems] = useState<any[] | undefined>(undefined);
 
   const getSceneData = useCallback(() => {
     const api = excalidrawAPIRef.current;
@@ -47,6 +50,13 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
       appState: {
         viewBackgroundColor: appState.viewBackgroundColor,
         gridSize: appState.gridSize,
+        gridModeEnabled: appState.gridModeEnabled,
+        theme: appState.theme,
+        zenModeEnabled: appState.zenModeEnabled,
+        objectsSnapModeEnabled: appState.objectsSnapModeEnabled,
+        zoom: appState.zoom,
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
       },
       files,
     });
@@ -94,6 +104,55 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
     }
   }
 
+  // Load global library on mount
+  useEffect(() => {
+    if (!isUnlocked || !masterKey) return;
+
+    async function loadLibrary() {
+      try {
+        const res = await fetch("/api/library");
+        if (!res.ok) return;
+        const { encryptedLibrary, libraryIv } = await res.json();
+        if (!encryptedLibrary || !libraryIv) {
+          setLibraryItems([]);
+          return;
+        }
+        const decrypted = await decryptDrawing(encryptedLibrary, libraryIv, masterKey!);
+        setLibraryItems(JSON.parse(decrypted));
+      } catch {
+        setLibraryItems([]);
+      }
+    }
+
+    loadLibrary();
+  }, [isUnlocked, masterKey]);
+
+  // Save library on change (debounced)
+  const handleLibraryChange = useCallback(
+    (items: readonly any[]) => {
+      if (!masterKey) return;
+
+      if (librarySaveTimerRef.current) {
+        clearTimeout(librarySaveTimerRef.current);
+      }
+
+      librarySaveTimerRef.current = setTimeout(async () => {
+        try {
+          const data = JSON.stringify(items);
+          const { encryptedData, iv } = await encryptDrawing(data, masterKey);
+          await fetch("/api/library", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ encryptedLibrary: encryptedData, libraryIv: iv }),
+          });
+        } catch (err) {
+          console.error("Library save failed:", err);
+        }
+      }, 1000);
+    },
+    [masterKey]
+  );
+
   const handleChange = useCallback(
     (elements: readonly any[], appState: any, files: any) => {
       if (!excalidrawAPIRef.current || !ready) return;
@@ -104,7 +163,7 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
         0
       );
       const fileCount = files ? Object.keys(files).length : 0;
-      const fp = `${active.length}:${versionSum}:${fileCount}:${appState.viewBackgroundColor ?? ""}:${appState.gridSize ?? ""}`;
+      const fp = `${active.length}:${versionSum}:${fileCount}:${appState.viewBackgroundColor ?? ""}:${appState.gridSize ?? ""}:${appState.gridModeEnabled ?? ""}:${appState.theme ?? ""}:${appState.zenModeEnabled ?? ""}:${appState.objectsSnapModeEnabled ?? ""}:${appState.zoom?.value ?? ""}:${Math.round(appState.scrollX ?? 0)}:${Math.round(appState.scrollY ?? 0)}`;
 
       // First call = initial load baseline, don't mark dirty
       if (lastFingerprintRef.current === null) {
@@ -137,7 +196,7 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
     );
   }
 
-  if (!initialData) return null;
+  if (!initialData || libraryItems === undefined) return null;
 
   return (
     <div className="h-full w-full relative">
@@ -202,8 +261,10 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
           elements: initialData.elements || [],
           appState: initialData.appState || {},
           files: initialData.files || {},
+          libraryItems,
         }}
         onChange={handleChange}
+        onLibraryChange={handleLibraryChange}
       />
     </div>
   );
