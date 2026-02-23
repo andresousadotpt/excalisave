@@ -87,7 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
         token.role = (user.role as string) || "user";
@@ -98,10 +98,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.encryptedMasterKeyPin = user.encryptedMasterKeyPin;
         token.masterKeyPinSalt = user.masterKeyPinSalt;
         token.masterKeyPinIv = user.masterKeyPinIv;
+        token.lastChecked = Date.now();
       }
+
+      // Re-check user status every 5 minutes
+      const lastChecked = (token.lastChecked as number) || 0;
+      if (Date.now() - lastChecked > 5 * 60 * 1000) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { banned: true, role: true },
+          });
+          if (dbUser?.banned) {
+            return { ...token, banned: true };
+          }
+          if (dbUser) {
+            token.role = dbUser.role;
+          }
+          token.lastChecked = Date.now();
+        } catch {
+          // DB check failed, continue with cached token
+        }
+      }
+
       return token;
     },
     session({ session, token }) {
+      if (token.banned) {
+        // Force sign-out for banned users
+        session.user.id = "";
+        return session;
+      }
       session.user.id = token.id as string;
       session.user.role = token.role as string;
       session.user.mustChangePassword = token.mustChangePassword as boolean;

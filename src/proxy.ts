@@ -39,12 +39,20 @@ export default auth((req) => {
     }
   }
 
-  // Protect account routes
-  if (pathname.startsWith("/account") || pathname.startsWith("/api/auth/account")) {
+  // Protect authenticated API routes (PIN, change-password, account)
+  if (
+    pathname.startsWith("/api/auth/pin") ||
+    pathname.startsWith("/api/auth/change-password") ||
+    pathname.startsWith("/api/auth/account")
+  ) {
     if (!isLoggedIn) {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
+  // Protect account routes
+  if (pathname.startsWith("/account")) {
+    if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }
@@ -77,8 +85,10 @@ export const config = {
     "/admin/:path*",
     "/api/drawings/:path*",
     "/api/admin/:path*",
-    "/account/:path*",
+    "/api/auth/pin",
+    "/api/auth/change-password",
     "/api/auth/account/:path*",
+    "/account/:path*",
     "/change-password",
     "/login",
     "/register",

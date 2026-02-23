@@ -36,7 +36,6 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          pin,
           encryptedMasterKeyPin: encryptedKey,
           masterKeyPinSalt: salt,
           masterKeyPinIv: iv,

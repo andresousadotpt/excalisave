@@ -3,16 +3,29 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string(),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(8).max(128).refine(
+    (pw) => /[a-z]/.test(pw) && /[A-Z]/.test(pw) && /[0-9]/.test(pw),
+    "Password must contain at least one lowercase letter, one uppercase letter, and one number"
+  ),
   encryptedMasterKey: z.string().optional(),
   masterKeySalt: z.string().optional(),
   masterKeyIv: z.string().optional(),
 });
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed, resetIn } = rateLimit(`chpw:${ip}`, 5, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(resetIn / 1000)) } }
+    );
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,6 +57,10 @@ export async function POST(req: Request) {
     const updateData: Record<string, unknown> = {
       passwordHash: newPasswordHash,
       mustChangePassword: false,
+      // Clear PIN material — PIN was derived from old password's master key wrapping
+      encryptedMasterKeyPin: null,
+      masterKeyPinSalt: null,
+      masterKeyPinIv: null,
     };
 
     // If E2EE key material is provided, update it too (re-encrypted with new password)

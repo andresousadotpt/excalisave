@@ -4,7 +4,12 @@ const PBKDF2_ITERATIONS = 600_000;
 const KEY_LENGTH = 256;
 
 function bufferToBase64(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 function base64ToBuffer(base64: string): ArrayBuffer {
@@ -104,7 +109,7 @@ export async function decryptMasterKey(
   );
 }
 
-const PIN_PBKDF2_ITERATIONS = 100_000;
+const PIN_PBKDF2_ITERATIONS = 300_000;
 
 /** Encrypt master key with a PIN (reduced iterations for faster unlock) */
 export async function encryptMasterKeyWithPin(

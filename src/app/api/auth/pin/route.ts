@@ -2,16 +2,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const pinSchema = z.object({
-  pin: z.string().regex(/^[a-zA-Z0-9]{8}$/, "PIN must be exactly 8 alphanumeric characters"),
-  encryptedMasterKeyPin: z.string().min(1),
-  masterKeyPinSalt: z.string().min(1),
-  masterKeyPinIv: z.string().min(1),
+  encryptedMasterKeyPin: z.string().min(1).max(500),
+  masterKeyPinSalt: z.string().min(1).max(500),
+  masterKeyPinIv: z.string().min(1).max(500),
 });
 
 // POST /api/auth/pin - Set or update PIN-wrapped master key
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const { allowed, resetIn } = rateLimit(`pin:${ip}`, 5, 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Try again later." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(resetIn / 1000)) } }
+    );
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

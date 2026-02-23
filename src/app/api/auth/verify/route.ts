@@ -22,6 +22,10 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${baseUrl}/login?error=invalid-token`);
   }
 
+  if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < new Date()) {
+    return NextResponse.redirect(`${baseUrl}/login?error=token-expired`);
+  }
+
   await prisma.user.update({
     where: { id: user.id },
     data: {

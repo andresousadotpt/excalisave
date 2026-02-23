@@ -5,9 +5,24 @@ const ALGORITHM = "aes-256-gcm";
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) throw new Error("ENCRYPTION_KEY env var is required");
-  // Key must be 32 bytes. Accept hex (64 chars) or base64 (44 chars).
-  if (key.length === 64) return Buffer.from(key, "hex");
-  return Buffer.from(key, "base64");
+
+  let decoded: Buffer;
+  if (key.startsWith("hex:")) {
+    decoded = Buffer.from(key.slice(4), "hex");
+  } else if (key.startsWith("b64:")) {
+    decoded = Buffer.from(key.slice(4), "base64");
+  } else if (key.length === 64 && /^[0-9a-fA-F]+$/.test(key)) {
+    // Legacy format: bare 64-char hex
+    decoded = Buffer.from(key, "hex");
+  } else {
+    // Legacy format: base64
+    decoded = Buffer.from(key, "base64");
+  }
+
+  if (decoded.length !== 32) {
+    throw new Error(`ENCRYPTION_KEY must decode to exactly 32 bytes (got ${decoded.length})`);
+  }
+  return decoded;
 }
 
 /** Encrypt a string with server-side AES-256-GCM. Returns "iv:authTag:ciphertext" in hex. */
@@ -39,8 +54,8 @@ export function serverDecrypt(data: string): string {
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
     return decipher.update(ciphertext).toString("utf8") + decipher.final("utf8");
-  } catch {
-    // Decryption failed — likely plaintext from before encryption was enabled
+  } catch (err) {
+    console.warn("[server-crypto] Decryption failed, returning raw data. This may indicate legacy plaintext or key mismatch.", err instanceof Error ? err.message : "");
     return data;
   }
 }

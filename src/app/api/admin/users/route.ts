@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         passwordHash: "",
         emailVerified: true,
         inviteToken,
+        inviteTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         encryptedMasterKey: "",
         masterKeySalt: "",
         masterKeyIv: "",

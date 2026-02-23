@@ -6,9 +6,9 @@ import { serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(255).optional(),
-  encryptedData: z.string().optional(),
-  iv: z.string().optional(),
-  thumbnail: z.string().nullable().optional(),
+  encryptedData: z.string().max(15_000_000).optional(),
+  iv: z.string().max(100).optional(),
+  thumbnail: z.string().max(2_000_000).nullable().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };

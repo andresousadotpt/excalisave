@@ -6,8 +6,8 @@ import { serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 
 const createSchema = z.object({
   name: z.string().min(1).max(255),
-  encryptedData: z.string(),
-  iv: z.string(),
+  encryptedData: z.string().max(15_000_000),
+  iv: z.string().max(100),
 });
 
 // GET /api/drawings - List user's drawings
