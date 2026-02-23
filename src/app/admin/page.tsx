@@ -56,7 +56,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
 
       {/* Stats Grid */}
       {stats && (
@@ -69,32 +69,32 @@ export default function AdminPage() {
       )}
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Users</h2>
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Users</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Email</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Role</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Verified</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Drawings</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Joined</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-600">Actions</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Email</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Role</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Verified</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Drawings</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Joined</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-gray-400">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-gray-900">{user.email}</td>
+                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{user.email}</td>
                   <td className="px-4 py-2">
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
                         user.role === "admin"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300"
+                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                       }`}
                     >
                       {user.role}
@@ -102,15 +102,15 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-2">
                     {user.emailVerified ? (
-                      <span className="text-green-600">Yes</span>
+                      <span className="text-green-600 dark:text-green-400">Yes</span>
                     ) : (
                       <span className="text-red-500">No</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-gray-600">
+                  <td className="px-4 py-2 text-gray-600 dark:text-gray-400">
                     {user._count.drawings}
                   </td>
-                  <td className="px-4 py-2 text-gray-500">
+                  <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-2">
@@ -126,7 +126,7 @@ export default function AdminPage() {
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(null)}
-                              className="text-xs px-2 py-1 text-gray-600 hover:text-gray-900"
+                              className="text-xs px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                             >
                               Cancel
                             </button>
@@ -154,9 +154,9 @@ export default function AdminPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
     </div>
   );
 }

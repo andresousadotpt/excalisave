@@ -45,7 +45,7 @@ export default function DashboardPage() {
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Drawings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Drawings</h1>
         <button
           onClick={() => setShowCreate(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
@@ -60,7 +60,7 @@ export default function DashboardPage() {
         </div>
       ) : drawings.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">No drawings yet</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">No drawings yet</p>
           <button
             onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"

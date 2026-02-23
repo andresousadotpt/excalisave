@@ -18,9 +18,9 @@ export function DrawingCard({
   onDelete,
 }: DrawingCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow group">
       <Link href={`/draw/${id}`} className="block">
-        <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
+        <div className="aspect-video bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
           {thumbnail ? (
             <img
               src={thumbnail}
@@ -29,7 +29,7 @@ export function DrawingCard({
             />
           ) : (
             <svg
-              className="w-12 h-12 text-gray-300"
+              className="w-12 h-12 text-gray-300 dark:text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -47,11 +47,11 @@ export function DrawingCard({
       <div className="p-3 flex items-center justify-between">
         <div className="min-w-0">
           <Link href={`/draw/${id}`}>
-            <h3 className="text-sm font-medium text-gray-900 truncate">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
               {name}
             </h3>
           </Link>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {new Date(updatedAt).toLocaleDateString()}
           </p>
         </div>
