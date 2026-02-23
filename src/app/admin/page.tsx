@@ -29,14 +29,21 @@ export default function AdminPage() {
   const [createPassword, setCreatePassword] = useState("");
   const [createError, setCreateError] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [togglingRegistration, setTogglingRegistration] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const [statsRes, usersRes] = await Promise.all([
+    const [statsRes, usersRes, settingsRes] = await Promise.all([
       fetch("/api/admin/stats"),
       fetch("/api/admin/users"),
+      fetch("/api/admin/settings"),
     ]);
     if (statsRes.ok) setStats(await statsRes.json());
     if (usersRes.ok) setUsers(await usersRes.json());
+    if (settingsRes.ok) {
+      const settings = await settingsRes.json();
+      setRegistrationEnabled(settings.registration_enabled === "true");
+    }
     setLoading(false);
   }, []);
 
@@ -59,6 +66,18 @@ export default function AdminPage() {
       body: JSON.stringify({ banned }),
     });
     if (res.ok) fetchData();
+  }
+
+  async function handleToggleRegistration() {
+    setTogglingRegistration(true);
+    const newValue = !registrationEnabled;
+    const res = await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ registration_enabled: newValue ? "true" : "false" }),
+    });
+    if (res.ok) setRegistrationEnabled(newValue);
+    setTogglingRegistration(false);
   }
 
   async function handleCreateUser(e: React.FormEvent) {
@@ -110,6 +129,31 @@ export default function AdminPage() {
           <StatCard label="New Users (7d)" value={stats.recentUsers} />
         </div>
       )}
+
+      {/* Settings */}
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Registration</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {registrationEnabled ? "New users can register" : "Registration is closed"}
+            </p>
+          </div>
+          <button
+            onClick={handleToggleRegistration}
+            disabled={togglingRegistration}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+              registrationEnabled ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                registrationEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
 
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">

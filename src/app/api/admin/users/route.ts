@@ -5,6 +5,13 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hashEmail, serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return "***";
+  const visible = local.length <= 2 ? local[0] : local.slice(0, 2);
+  return `${visible}***@${domain}`;
+}
+
 // GET /api/admin/users - List all users
 export async function GET() {
   const session = await auth();
@@ -27,9 +34,9 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  const decrypted = users.map((u) => ({
+  const result = users.map((u) => ({
     id: u.id,
-    email: serverDecrypt(u.encryptedEmail),
+    email: maskEmail(serverDecrypt(u.encryptedEmail)),
     role: u.role,
     emailVerified: u.emailVerified,
     banned: u.banned,
@@ -37,7 +44,7 @@ export async function GET() {
     _count: u._count,
   }));
 
-  return NextResponse.json(decrypted);
+  return NextResponse.json(result);
 }
 
 const createUserSchema = z.object({

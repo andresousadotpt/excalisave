@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { AuthForm } from "@/components/AuthForm";
 import { Suspense } from "react";
+import { isRegistrationEnabled } from "@/lib/settings";
 
-export default function LoginPage() {
-  const registrationEnabled = process.env.REGISTRATION_ENABLED !== "false";
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage() {
+  const registrationEnabled = await isRegistrationEnabled();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">

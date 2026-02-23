@@ -25,6 +25,11 @@ model User {
   drawings           Drawing[]
 }
 
+model Setting {
+  key   String @id
+  value String
+}
+
 model Drawing {
   id            String   @id @default(cuid())
   encryptedName String

@@ -82,7 +82,29 @@ async function main() {
   console.log(`Admin user ${adminEmail} created (must change password on first login)`);
 }
 
-main()
+async function seedSettings() {
+  // Only insert if the setting doesn't already exist (DB value is prioritized)
+  const existing = await prisma.setting.findUnique({
+    where: { key: "registration_enabled" },
+  });
+
+  if (!existing) {
+    const value = process.env.REGISTRATION_ENABLED !== "false" ? "true" : "false";
+    await prisma.setting.create({
+      data: { key: "registration_enabled", value },
+    });
+    console.log(`Setting registration_enabled = ${value} (from env)`);
+  } else {
+    console.log(`Setting registration_enabled already exists (${existing.value}), skipping`);
+  }
+}
+
+async function run() {
+  await main();
+  await seedSettings();
+}
+
+run()
   .catch((e) => {
     console.error("Seed error:", e);
     process.exit(1);

@@ -8,7 +8,7 @@ export async function sendVerificationEmail(
   email: string,
   token: string
 ) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || "http://localhost:3000";
   const verifyUrl = `${appUrl}/api/auth/verify?token=${token}`;
   const from = process.env.EMAIL_FROM || "noreply@example.com";
 

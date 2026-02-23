@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import { hashEmail, serverEncrypt } from "@/lib/server-crypto";
+import { isRegistrationEnabled } from "@/lib/settings";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -15,7 +16,7 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  if (process.env.REGISTRATION_ENABLED === "false") {
+  if (!(await isRegistrationEnabled())) {
     return NextResponse.json(
       { error: "Registration is currently disabled" },
       { status: 403 }

@@ -12,7 +12,13 @@ export function UnlockModal() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (!session || isUnlocked) return null;
+  // Don't show if not logged in, already unlocked, or user has no vault (empty key material)
+  const hasKeyMaterial =
+    session?.user?.encryptedMasterKey &&
+    session?.user?.masterKeySalt &&
+    session?.user?.masterKeyIv;
+
+  if (!session || isUnlocked || !hasKeyMaterial) return null;
 
   async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
