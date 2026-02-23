@@ -4,6 +4,8 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDrawing } from "@/hooks/useDrawing";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
+import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import dynamic from "next/dynamic";
 import "@excalidraw/excalidraw/index.css";
@@ -76,12 +78,15 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
     return { data, thumbnail };
   }, [ready]);
 
-  const { markDirty, saveStatus } = useAutoSave({
+  const { markDirty, saveStatus, isDirty } = useAutoSave({
     onSave: async (data: string, thumbnail?: string | null) => {
       await saveDrawing(data, thumbnail);
     },
     getSceneData,
   });
+
+  const { guardNavigation, showWarning, confirmNavigation, cancelNavigation } =
+    useUnsavedChangesWarning({ isDirty });
 
   // Parse initial data once when sceneData is available
   const hasInitialized = useRef(false);
@@ -160,7 +165,7 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
       {/* Back button + Drawing name with dropdown */}
       <div className="absolute top-3 left-3 z-10 flex items-center gap-1">
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => guardNavigation(() => router.push("/dashboard"))}
           className="flex items-center justify-center w-7 h-7 bg-white/80 backdrop-blur rounded shadow-sm hover:bg-white transition-colors"
           title="Back to drawings"
         >
@@ -196,7 +201,7 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
                       key={d.id}
                       onClick={() => {
                         setShowDrawingList(false);
-                        if (d.id !== drawingId) router.push(`/draw/${d.id}`);
+                        if (d.id !== drawingId) guardNavigation(() => router.push(`/draw/${d.id}`));
                       }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
                         d.id === drawingId ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300" : "text-gray-700 dark:text-gray-300"
@@ -216,6 +221,12 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
           )}
         </div>
       </div>
+
+      <UnsavedChangesDialog
+        open={showWarning}
+        onStay={cancelNavigation}
+        onLeave={confirmNavigation}
+      />
 
       <Excalidraw
         excalidrawAPI={(api: any) => {

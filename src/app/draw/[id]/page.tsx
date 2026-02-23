@@ -11,7 +11,7 @@ export default async function DrawPage({
   return (
     <div className="h-screen w-screen">
       <UnlockModal />
-      <ExcalidrawEditor drawingId={id} />
+      <ExcalidrawEditor key={id} drawingId={id} />
     </div>
   );
 }

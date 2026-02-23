@@ -40,5 +40,7 @@ export function useAutoSave({ onSave, getSceneData, delay = 3000 }: UseAutoSaveO
     }, delay);
   }, [onSave, getSceneData, delay]);
 
-  return { markDirty, saveStatus };
+  const isDirty = useCallback(() => dirtyRef.current, []);
+
+  return { markDirty, saveStatus, isDirty };
 }
