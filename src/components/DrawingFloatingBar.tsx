@@ -103,13 +103,13 @@ export function DrawingFloatingBar({
     <>
       {/* Backdrop when expanded */}
       {expanded && (
-        <div className="fixed inset-0 z-20" onClick={() => setExpanded(false)} />
+        <div className="fixed inset-0" onClick={() => setExpanded(false)} />
       )}
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
-        {expanded ? (
-          /* Expanded panel */
-          <div className="w-[480px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="relative z-10">
+        {/* Expanded panel - opens upward */}
+        {expanded && (
+          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[480px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Drawings</h3>
@@ -118,7 +118,7 @@ export function DrawingFloatingBar({
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -241,26 +241,26 @@ export function DrawingFloatingBar({
               )}
             </div>
           </div>
-        ) : (
-          /* Collapsed pill */
-          <button
-            onClick={() => setExpanded(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors"
-          >
-            {projectColor && (
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />
-            )}
-            {projectName && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{projectName} /</span>
-            )}
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
-              {currentDrawingName}
-            </span>
-            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
-          </button>
         )}
+
+        {/* Pill button (always visible) */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors"
+        >
+          {projectColor && (
+            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: projectColor }} />
+          )}
+          {projectName && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">{projectName} /</span>
+          )}
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
+            {currentDrawingName}
+          </span>
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={expanded ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
+          </svg>
+        </button>
       </div>
     </>
   );
