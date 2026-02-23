@@ -79,26 +79,23 @@ export function AuthForm({ mode }: AuthFormProps) {
         const sessionRes = await fetch("/api/auth/session");
         const session = await sessionRes.json();
 
-        // Handle admin or must-change-password
+        // Handle must-change-password (admin first login)
         if (session.user.mustChangePassword) {
           router.push("/change-password");
           return;
         }
 
-        if (session.user.role === "admin") {
-          router.push("/admin");
-          return;
+        // Decrypt master key if key material exists
+        if (session.user.encryptedMasterKey && session.user.masterKeySalt && session.user.masterKeyIv) {
+          const masterKey = await decryptMasterKey(
+            session.user.encryptedMasterKey,
+            session.user.masterKeySalt,
+            session.user.masterKeyIv,
+            password
+          );
+          setMasterKey(masterKey);
         }
 
-        // Decrypt master key for regular users
-        const masterKey = await decryptMasterKey(
-          session.user.encryptedMasterKey,
-          session.user.masterKeySalt,
-          session.user.masterKeyIv,
-          password
-        );
-
-        setMasterKey(masterKey);
         router.push("/dashboard");
       }
     } catch (err) {

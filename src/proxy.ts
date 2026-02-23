@@ -16,7 +16,7 @@ export default auth((req) => {
     }
   }
 
-  // Protect admin routes
+  // Protect admin routes (admin role required)
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -51,9 +51,6 @@ export default auth((req) => {
     if (isLoggedIn) {
       if (user?.mustChangePassword) {
         return NextResponse.redirect(new URL("/change-password", req.url));
-      }
-      if (user?.role === "admin") {
-        return NextResponse.redirect(new URL("/admin", req.url));
       }
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }

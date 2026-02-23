@@ -15,22 +15,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
 
-        if (!email || !password) return null;
+        if (!email || !password) {
+          console.warn("[auth] Missing email or password in credentials");
+          return null;
+        }
 
         const emailH = hashEmail(email);
         const user = await prisma.user.findUnique({
           where: { emailHash: emailH },
         });
-        if (!user) return null;
+
+        if (!user) {
+          console.warn(`[auth] No user found for email hash ${emailH.slice(0, 8)}...`);
+          return null;
+        }
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) return null;
+        if (!isValid) {
+          console.warn(`[auth] Invalid password for user ${user.id}`);
+          return null;
+        }
 
         if (!user.emailVerified) {
+          console.warn(`[auth] Unverified email for user ${user.id}`);
           throw new Error("Please verify your email before signing in");
         }
 
         const decryptedEmail = serverDecrypt(user.encryptedEmail);
+
+        console.log(`[auth] User ${user.id} authenticated (role: ${user.role})`);
 
         return {
           id: user.id,

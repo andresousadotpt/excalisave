@@ -58,6 +58,8 @@ export async function POST(req: Request) {
       data: updateData,
     });
 
+    console.log(`[change-password] Password changed for user ${session.user.id} (key material: ${encryptedMasterKey ? "updated" : "unchanged"})`);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -66,7 +68,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.error("Change password error:", error);
+    console.error("[change-password] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -4,7 +4,11 @@ import { useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useMasterKey } from "@/hooks/useMasterKey";
-import { decryptMasterKey, encryptMasterKey } from "@/lib/crypto";
+import {
+  generateMasterKey,
+  decryptMasterKey,
+  encryptMasterKey,
+} from "@/lib/crypto";
 
 export default function ChangePasswordPage() {
   const { data: session } = useSession();
@@ -27,10 +31,14 @@ export default function ChangePasswordPage() {
 
     setLoading(true);
     try {
-      // If user has master key material, re-encrypt with new password
       let keyMaterial: Record<string, string> = {};
-      if (session?.user?.encryptedMasterKey) {
-        // Decrypt with current password
+      const hasKeyMaterial =
+        session?.user?.encryptedMasterKey &&
+        session?.user?.masterKeySalt &&
+        session?.user?.masterKeyIv;
+
+      if (hasKeyMaterial) {
+        // Re-encrypt existing master key with new password
         let key = masterKey;
         if (!key) {
           key = await decryptMasterKey(
@@ -41,14 +49,22 @@ export default function ChangePasswordPage() {
           );
         }
 
-        // Re-encrypt with new password
         const encrypted = await encryptMasterKey(key, newPassword);
         keyMaterial = {
           encryptedMasterKey: encrypted.encryptedKey,
           masterKeySalt: encrypted.salt,
           masterKeyIv: encrypted.iv,
         };
-
+        setMasterKey(key);
+      } else {
+        // No master key yet (e.g. admin first login) — generate one
+        const key = await generateMasterKey();
+        const encrypted = await encryptMasterKey(key, newPassword);
+        keyMaterial = {
+          encryptedMasterKey: encrypted.encryptedKey,
+          masterKeySalt: encrypted.salt,
+          masterKeyIv: encrypted.iv,
+        };
         setMasterKey(key);
       }
 
@@ -75,17 +91,11 @@ export default function ChangePasswordPage() {
       });
 
       if (signInResult?.error) {
-        // Password changed but re-login failed — send to login page
         router.push("/login");
         return;
       }
 
-      // Redirect based on role
-      if (session?.user?.role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

@@ -18,16 +18,21 @@ export function Navbar() {
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link
-          href={session?.user?.role === "admin" ? "/admin" : "/dashboard"}
+          href="/dashboard"
           className="text-xl font-bold text-gray-900 dark:text-white"
         >
           Excalisave
         </Link>
         <div className="flex items-center gap-4">
           {session?.user?.role === "admin" && (
-            <Link href="/admin" className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
-              Admin
-            </Link>
+            <>
+              <Link href="/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                Drawings
+              </Link>
+              <Link href="/admin" className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
+                Admin
+              </Link>
+            </>
           )}
           <span className="text-sm text-gray-600 dark:text-gray-400">{session?.user?.email}</span>
           <ThemeToggle />

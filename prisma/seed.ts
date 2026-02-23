@@ -47,7 +47,18 @@ async function main() {
   });
 
   if (existing) {
-    console.log(`Admin user ${adminEmail} already exists, skipping`);
+    // Ensure encryptedEmail is properly encrypted (fix legacy plaintext)
+    const parts = existing.encryptedEmail.split(":");
+    if (parts.length !== 3) {
+      const encryptedEmail = serverEncrypt(adminEmail.toLowerCase().trim());
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { encryptedEmail },
+      });
+      console.log(`Admin user ${adminEmail} encryptedEmail fixed`);
+    } else {
+      console.log(`Admin user ${adminEmail} already exists, skipping`);
+    }
     return;
   }
 

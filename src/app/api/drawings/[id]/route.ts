@@ -82,7 +82,7 @@ export async function PUT(req: Request, { params }: Params) {
         { status: 400 }
       );
     }
-    console.error("Update drawing error:", error);
+    console.error("[drawings] Update error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

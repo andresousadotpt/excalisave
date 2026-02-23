@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.error("Create drawing error:", error);
+    console.error("[drawings] Create error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

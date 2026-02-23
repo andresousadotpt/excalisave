@@ -2,9 +2,11 @@
 ALTER TABLE "User" ADD COLUMN "emailHash" TEXT;
 ALTER TABLE "User" ADD COLUMN "encryptedEmail" TEXT;
 
--- Migrate existing data: copy email to both new columns as placeholder
--- (real deployments should re-encrypt; for fresh installs this handles the seed user)
-UPDATE "User" SET "emailHash" = "email", "encryptedEmail" = "email";
+-- Migrate existing data: hash email for lookups, keep plaintext as encryptedEmail
+-- (encryptedEmail will be fixed by the seed script on next run)
+UPDATE "User" SET
+  "emailHash" = encode(sha256(lower(trim("email"))::bytea), 'hex'),
+  "encryptedEmail" = "email";
 
 -- Make columns NOT NULL after backfill
 ALTER TABLE "User" ALTER COLUMN "emailHash" SET NOT NULL;

@@ -56,6 +56,8 @@ export async function POST(req: Request) {
 
     await sendVerificationEmail(email, verificationToken);
 
+    console.log(`[register] User registered (hash: ${emailH.slice(0, 8)}...)`);
+
     return NextResponse.json(
       { success: true, message: "Check your email to verify your account" },
       { status: 201 }
@@ -67,7 +69,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.error("Registration error:", error);
+    console.error("[register] Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
