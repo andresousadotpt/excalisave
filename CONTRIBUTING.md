@@ -28,6 +28,7 @@ Edit `.env` with your values. At minimum you need:
 
 - `DATABASE_URL` — a running PostgreSQL instance
 - `AUTH_SECRET` — generate one with `openssl rand -base64 32`
+- `ENCRYPTION_KEY` — generate with `openssl rand -hex 32`
 - `RESEND_API_KEY` — from [resend.com/api-keys](https://resend.com/api-keys)
 
 ### 3. Set up the database

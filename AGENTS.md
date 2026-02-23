@@ -63,6 +63,7 @@ src/
 ├── lib/
 │   ├── prisma.ts               # PrismaClient singleton (PrismaPg adapter)
 │   ├── crypto.ts               # E2EE functions (client-side only)
+│   ├── server-crypto.ts        # Server-side AES-256-GCM for PII (email, drawing names)
 │   ├── email.ts                # Resend email service
 │   └── constants.ts
 ├── auth.ts                     # NextAuth config
@@ -111,7 +112,11 @@ All API routes follow: auth check → authorization (ownership/role) → Zod val
 
 Prisma 7 with `@prisma/adapter-pg`. URL configured in `prisma.config.ts`, NOT in schema.prisma. Generated client outputs to `src/generated/prisma/`.
 
-**Models**: User (with E2EE key material, role, email verification) and Drawing (encrypted data, IV, optional thumbnail). Cascade delete on user removal.
+**Models**: User (with E2EE key material, role, email verification, emailHash for lookups, encryptedEmail for display) and Drawing (encryptedName, encrypted data, IV, optional thumbnail). Cascade delete on user removal.
+
+### Server-Side PII Encryption
+
+Sensitive metadata (email addresses, drawing names) is encrypted at rest using AES-256-GCM with a server-managed `ENCRYPTION_KEY`. Emails are hashed (SHA-256) for lookups via `emailHash` field, while `encryptedEmail` stores the reversible ciphertext for display. Drawing names use `encryptedName` — the API decrypts on read and encrypts on write. See `src/lib/server-crypto.ts`.
 
 ## Commands
 
@@ -135,6 +140,7 @@ npm run db:seed          # Seed admin user (idempotent)
 | `REGISTRATION_ENABLED` | No | `"true"` (default) or `"false"` |
 | `RESEND_API_KEY` | Yes | Resend API key for email |
 | `EMAIL_FROM` | No | Sender address for emails |
+| `ENCRYPTION_KEY` | Yes | AES-256-GCM key for PII encryption (hex or base64) |
 | `ADMIN_EMAIL` | No | Default admin email for seed |
 | `ADMIN_PASSWORD` | No | Default admin password for seed |
 
@@ -164,6 +170,8 @@ Examples:
 
 - Never decrypt drawing data server-side
 - Never log or expose master key material in plaintext
+- PII (emails, drawing names) must be encrypted at rest with `ENCRYPTION_KEY`
+- Email lookups must use `emailHash` (SHA-256), never query by plaintext email
 - Always validate ownership: `drawing.userId === session.user.id`
 - Admin routes must check `session.user.role === "admin"`
 - Use `REGISTRATION_ENABLED` env var to gate public signups

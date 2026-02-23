@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 
 const createSchema = z.object({
   name: z.string().min(1).max(255),
@@ -20,7 +21,7 @@ export async function GET() {
     where: { userId: session.user.id },
     select: {
       id: true,
-      name: true,
+      encryptedName: true,
       thumbnail: true,
       createdAt: true,
       updatedAt: true,
@@ -28,7 +29,15 @@ export async function GET() {
     orderBy: { updatedAt: "desc" },
   });
 
-  return NextResponse.json(drawings);
+  const decrypted = drawings.map((d) => ({
+    id: d.id,
+    name: serverDecrypt(d.encryptedName),
+    thumbnail: d.thumbnail,
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+  }));
+
+  return NextResponse.json(decrypted);
 }
 
 // POST /api/drawings - Create new drawing
@@ -44,20 +53,28 @@ export async function POST(req: Request) {
 
     const drawing = await prisma.drawing.create({
       data: {
-        name,
+        encryptedName: serverEncrypt(name),
         encryptedData,
         iv,
         userId: session.user.id,
       },
       select: {
         id: true,
-        name: true,
+        encryptedName: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
-    return NextResponse.json(drawing, { status: 201 });
+    return NextResponse.json(
+      {
+        id: drawing.id,
+        name: serverDecrypt(drawing.encryptedName),
+        createdAt: drawing.createdAt,
+        updatedAt: drawing.updatedAt,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

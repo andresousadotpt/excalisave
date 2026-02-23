@@ -27,6 +27,7 @@ services:
       REGISTRATION_ENABLED: "${REGISTRATION_ENABLED:-true}"
       RESEND_API_KEY: "${RESEND_API_KEY}"
       EMAIL_FROM: "${EMAIL_FROM:-Excalisave <noreply@example.com>}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-change-me-on-first-login}"
     depends_on:

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { serverDecrypt } from "@/lib/server-crypto";
 
 export async function GET() {
   const session = await auth();
@@ -11,7 +12,7 @@ export async function GET() {
   const users = await prisma.user.findMany({
     select: {
       id: true,
-      email: true,
+      encryptedEmail: true,
       role: true,
       emailVerified: true,
       createdAt: true,
@@ -22,5 +23,14 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(users);
+  const decrypted = users.map((u) => ({
+    id: u.id,
+    email: serverDecrypt(u.encryptedEmail),
+    role: u.role,
+    emailVerified: u.emailVerified,
+    createdAt: u.createdAt,
+    _count: u._count,
+  }));
+
+  return NextResponse.json(decrypted);
 }

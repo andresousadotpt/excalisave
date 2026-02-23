@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { hashEmail, serverDecrypt } from "@/lib/server-crypto";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -16,7 +17,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const emailH = hashEmail(email);
+        const user = await prisma.user.findUnique({
+          where: { emailHash: emailH },
+        });
         if (!user) return null;
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -26,9 +30,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Please verify your email before signing in");
         }
 
+        const decryptedEmail = serverDecrypt(user.encryptedEmail);
+
         return {
           id: user.id,
-          email: user.email,
+          email: decryptedEmail,
           role: user.role,
           mustChangePassword: user.mustChangePassword,
           encryptedMasterKey: user.encryptedMasterKey,

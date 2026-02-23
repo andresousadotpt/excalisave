@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { serverEncrypt, serverDecrypt } from "@/lib/server-crypto";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -30,7 +31,11 @@ export async function GET(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json(drawing);
+  return NextResponse.json({
+    ...drawing,
+    name: serverDecrypt(drawing.encryptedName),
+    encryptedName: undefined,
+  });
 }
 
 // PUT /api/drawings/[id]
@@ -53,14 +58,23 @@ export async function PUT(req: Request, { params }: Params) {
 
   try {
     const body = await req.json();
-    const data = updateSchema.parse(body);
+    const { name, ...rest } = updateSchema.parse(body);
+
+    const data: Record<string, unknown> = { ...rest };
+    if (name !== undefined) {
+      data.encryptedName = serverEncrypt(name);
+    }
 
     const updated = await prisma.drawing.update({
       where: { id },
       data,
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json({
+      ...updated,
+      name: serverDecrypt(updated.encryptedName),
+      encryptedName: undefined,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

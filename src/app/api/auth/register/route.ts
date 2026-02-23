@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { hashEmail, serverEncrypt } from "@/lib/server-crypto";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -14,7 +15,6 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  // Check if registration is enabled
   if (process.env.REGISTRATION_ENABLED === "false") {
     return NextResponse.json(
       { error: "Registration is currently disabled" },
@@ -27,7 +27,10 @@ export async function POST(req: Request) {
     const { email, password, encryptedMasterKey, masterKeySalt, masterKeyIv } =
       registerSchema.parse(body);
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const emailH = hashEmail(email);
+    const existing = await prisma.user.findUnique({
+      where: { emailHash: emailH },
+    });
     if (existing) {
       return NextResponse.json(
         { error: "Email already registered" },
@@ -37,10 +40,12 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const verificationToken = crypto.randomBytes(32).toString("hex");
+    const encryptedEmail = serverEncrypt(email.toLowerCase().trim());
 
     await prisma.user.create({
       data: {
-        email,
+        emailHash: emailH,
+        encryptedEmail,
         passwordHash,
         encryptedMasterKey,
         masterKeySalt,
@@ -49,7 +54,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send verification email
     await sendVerificationEmail(email, verificationToken);
 
     return NextResponse.json(
