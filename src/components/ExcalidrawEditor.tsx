@@ -5,6 +5,7 @@ import { useDrawing } from "@/hooks/useDrawing";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import dynamic from "next/dynamic";
+import "@excalidraw/excalidraw/index.css";
 
 const Excalidraw = dynamic(
   async () => {
