@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { encryptMasterKeyWithPin } from "@/lib/crypto";
 
 interface SetPinDialogProps {
@@ -9,6 +10,7 @@ interface SetPinDialogProps {
 }
 
 export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
+  const { update } = useSession();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState("");
@@ -47,6 +49,7 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
         throw new Error(data.error || "Failed to save PIN");
       }
 
+      await update();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
