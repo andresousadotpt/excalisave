@@ -31,6 +31,7 @@ services:
       ENCRYPTION_KEY: "${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in .env (use: openssl rand -hex 32)}"
       ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}"
+      COLLAB_URL: "${COLLAB_URL:-}"
     depends_on:
       db:
         condition: service_healthy

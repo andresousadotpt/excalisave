@@ -33,6 +33,7 @@ interface UseCollaborationOptions {
 }
 
 interface UseCollaborationReturn {
+  collabEnabled: boolean;
   isCollaborating: boolean;
   roomId: string | null;
   shareUrl: string | null;
@@ -59,9 +60,22 @@ interface UseCollaborationReturn {
   collaborators: Map<string, Collaborator>;
 }
 
-const COLLAB_URL = process.env.NEXT_PUBLIC_COLLAB_URL;
 const CURSOR_THROTTLE_MS = 33; // ~30fps
 const SCENE_DEBOUNCE_MS = 100;
+
+let _collabUrlCache: string | null = null;
+
+async function getCollabUrl(): Promise<string | null> {
+  if (_collabUrlCache !== null) return _collabUrlCache || null;
+  try {
+    const res = await fetch("/api/collab/config");
+    const { url } = await res.json();
+    _collabUrlCache = url || "";
+    return url || null;
+  } catch {
+    return null;
+  }
+}
 
 export function useCollaboration({
   excalidrawAPI,
@@ -78,6 +92,7 @@ export function useCollaboration({
   const [collaborators, setCollaborators] = useState<Map<string, Collaborator>>(
     () => new Map()
   );
+  const [collabEnabled, setCollabEnabled] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const roomKeyRef = useRef<CryptoKey | null>(null);
@@ -89,6 +104,11 @@ export function useCollaboration({
   const elementVersionsRef = useRef<Map<string, number>>(new Map());
   const usernameRef = useRef<string>("");
   const colorRef = useRef<string>("");
+
+  // Check if collab server is configured
+  useEffect(() => {
+    getCollabUrl().then((url) => setCollabEnabled(!!url));
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -279,7 +299,8 @@ export function useCollaboration({
   );
 
   const startRoom = useCallback(async () => {
-    if (!COLLAB_URL) {
+    const collabUrl = await getCollabUrl();
+    if (!collabUrl) {
       setError("Collaboration server not configured");
       return;
     }
@@ -293,7 +314,7 @@ export function useCollaboration({
       roomKeyRef.current = key;
       const keyB64 = await exportRoomKey(key);
 
-      const socket = io(COLLAB_URL, {
+      const socket = io(collabUrl, {
         transports: ["websocket"],
         reconnection: false,
       });
@@ -384,7 +405,8 @@ export function useCollaboration({
       username: string,
       color: string
     ) => {
-      if (!COLLAB_URL) {
+      const collabUrl = await getCollabUrl();
+      if (!collabUrl) {
         setError("Collaboration server not configured");
         return;
       }
@@ -395,7 +417,7 @@ export function useCollaboration({
         usernameRef.current = username;
         colorRef.current = color;
 
-        const socket = io(COLLAB_URL, {
+        const socket = io(collabUrl, {
           transports: ["websocket"],
           reconnection: false,
         });
@@ -524,6 +546,7 @@ export function useCollaboration({
   );
 
   return {
+    collabEnabled,
     isCollaborating,
     roomId,
     shareUrl,

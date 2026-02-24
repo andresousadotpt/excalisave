@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
-              `connect-src 'self' https://libraries.excalidraw.com ws: wss: ${process.env.NEXT_PUBLIC_COLLAB_URL ?? ""}`.trim(),
+              `connect-src 'self' https://libraries.excalidraw.com ws: wss: ${process.env.COLLAB_URL ?? ""}`.trim(),
               "font-src 'self' data:",
               "frame-ancestors 'none'",
               "base-uri 'self'",

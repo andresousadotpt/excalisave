@@ -328,7 +328,7 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
           </span>
         )}
 
-        {process.env.NEXT_PUBLIC_COLLAB_URL && (
+        {collab.collabEnabled && (
           <button
             onClick={async () => {
               if (!collab.isCollaborating) {
