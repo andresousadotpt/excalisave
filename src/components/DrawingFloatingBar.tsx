@@ -103,13 +103,13 @@ export function DrawingFloatingBar({
     <>
       {/* Backdrop when expanded */}
       {expanded && (
-        <div className="fixed inset-0" onClick={() => setExpanded(false)} />
+        <div className="fixed inset-0 z-40" onClick={() => setExpanded(false)} />
       )}
 
       <div className="relative z-10">
         {/* Expanded panel - opens upward */}
         {expanded && (
-          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[480px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden max-h-[60vh] sm:max-h-[80vh] flex flex-col">
+          <div className="fixed sm:absolute inset-x-3 sm:inset-x-auto bottom-32 sm:bottom-full sm:mb-2 sm:left-1/2 sm:-translate-x-1/2 sm:w-[480px] z-50 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden max-h-[60vh] sm:max-h-[80vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Drawings</h3>
@@ -196,7 +196,7 @@ export function DrawingFloatingBar({
                       <img
                         src={d.thumbnail}
                         alt=""
-                        className="w-12 h-7 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                        className="w-12 h-7 object-contain rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
                       />
                     ) : (
                       <div className="w-12 h-7 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 flex-shrink-0" />

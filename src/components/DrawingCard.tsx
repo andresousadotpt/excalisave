@@ -39,7 +39,7 @@ export function DrawingCard({
             <img
               src={thumbnail}
               alt={name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           ) : (
             <svg

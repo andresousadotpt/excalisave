@@ -1,13 +1,21 @@
 "use client";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, getSystemTheme } from "@/hooks/useTheme";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolved } = useTheme();
 
   function cycle() {
-    const next = theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
-    setTheme(next);
+    if (theme === "system") {
+      // From system, go to opposite of resolved appearance
+      setTheme(resolved === "dark" ? "light" : "dark");
+    } else if (theme === "light") {
+      setTheme("dark");
+    } else {
+      // From dark, go to system only if it would look different
+      const systemResolved = getSystemTheme();
+      setTheme(systemResolved === "dark" ? "light" : "system");
+    }
   }
 
   return (

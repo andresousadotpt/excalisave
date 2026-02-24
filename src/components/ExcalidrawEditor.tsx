@@ -7,7 +7,9 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { DrawingFloatingBar } from "@/components/DrawingFloatingBar";
+import { CollabShareDialog } from "@/components/CollabShareDialog";
 import { useMasterKey } from "@/hooks/useMasterKey";
+import { useCollaboration } from "@/hooks/useCollaboration";
 import { encryptDrawing, decryptDrawing } from "@/lib/crypto";
 import dynamic from "next/dynamic";
 import "@excalidraw/excalidraw/index.css";
@@ -30,10 +32,18 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
   const { sceneData, drawingName, projectName, projectColor, loading, error, saveDrawing } = useDrawing(drawingId);
   const excalidrawAPIRef = useRef<any>(null);
   const lastFingerprintRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [initialData, setInitialData] = useState<any>(null);
   const [ready, setReady] = useState(false);
+  const [excalidrawMenuOpen, setExcalidrawMenuOpen] = useState(false);
   const librarySaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [libraryItems, setLibraryItems] = useState<any[] | undefined>(undefined);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+
+  const collab = useCollaboration({
+    excalidrawAPI: excalidrawAPIRef.current,
+    mode: "owner",
+  });
 
   const getSceneData = useCallback(() => {
     const api = excalidrawAPIRef.current;
@@ -73,7 +83,16 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
           files,
           mimeType: "image/png",
           quality: 0.5,
-          getDimensions: () => ({ width: 320, height: 180, scale: 1 }),
+          getDimensions: (contentWidth: number, contentHeight: number) => {
+            const maxW = 320;
+            const maxH = 180;
+            const scale = Math.min(maxW / contentWidth, maxH / contentHeight, 1);
+            return {
+              width: Math.round(contentWidth * scale),
+              height: Math.round(contentHeight * scale),
+              scale: 2,
+            };
+          },
         });
         return await new Promise<string>((resolve) => {
           const reader = new FileReader();
@@ -133,6 +152,23 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
 
     loadLibrary();
   }, [isUnlocked, masterKey]);
+
+  // Detect Excalidraw's mobile dropdown menu to hide our floating bar
+  useEffect(() => {
+    if (!ready || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const checkMenu = () => {
+      const mobileMenu = container.querySelector(
+        ".dropdown-menu--mobile, [data-testid='dropdown-menu']"
+      );
+      setExcalidrawMenuOpen(!!mobileMenu);
+    };
+
+    const observer = new MutationObserver(checkMenu);
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [ready]);
 
   // Handle #addLibrary hash URL for library installation from libraries.excalidraw.com
   useEffect(() => {
@@ -245,10 +281,10 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
   if (!initialData || libraryItems === undefined) return null;
 
   return (
-    <div className="h-full w-full relative">
+    <div className="h-full w-full relative" ref={containerRef}>
       {/* Bottom-center: back button + floating bar + save indicator */}
       {/* On mobile, pushed up above Excalidraw's own bottom toolbar */}
-      <div className="absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 max-w-[calc(100vw-1rem)]">
+      <div className={`absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 max-w-[calc(100vw-1rem)] transition-opacity duration-150 ${excalidrawMenuOpen ? "opacity-0 pointer-events-none" : ""}`}>
         <button
           onClick={() => guardNavigation(() => router.push("/dashboard"))}
           className="flex items-center justify-center w-10 h-10 sm:w-9 sm:h-9 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors flex-shrink-0"
