@@ -69,25 +69,31 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
           Your vault locks every time you close the browser. A PIN lets you unlock it quickly without typing your full password each time.
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <PasswordInput
-            inputMode="text"
-            maxLength={8}
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-            placeholder="Enter PIN"
-            required
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 tracking-widest text-center text-lg"
-            autoFocus
-          />
-          <PasswordInput
-            inputMode="text"
-            maxLength={8}
-            value={confirmPin}
-            onChange={(e) => setConfirmPin(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
-            placeholder="Confirm PIN"
-            required
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 tracking-widest text-center text-lg"
-          />
+          <div>
+            <PasswordInput
+              inputMode="text"
+              maxLength={8}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+              placeholder="Enter 8-character PIN"
+              required
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 tracking-widest text-center text-lg"
+              autoFocus
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">{pin.length}/8 characters</p>
+          </div>
+          <div>
+            <PasswordInput
+              inputMode="text"
+              maxLength={8}
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))}
+              placeholder="Confirm PIN"
+              required
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 tracking-widest text-center text-lg"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">{confirmPin.length}/8 characters</p>
+          </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button
