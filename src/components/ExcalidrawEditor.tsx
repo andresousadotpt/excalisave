@@ -63,7 +63,14 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
 
     const thumbnail = (async (): Promise<string | null> => {
       try {
-        const blob = await api.exportToBlob({
+        const { exportToBlob } = await import("@excalidraw/excalidraw");
+        const nonDeletedElements = elements.filter(
+          (el: any) => !el.isDeleted
+        );
+        const blob = await exportToBlob({
+          elements: nonDeletedElements,
+          appState,
+          files,
           mimeType: "image/png",
           quality: 0.5,
           getDimensions: () => ({ width: 320, height: 180, scale: 1 }),
@@ -126,6 +133,45 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
 
     loadLibrary();
   }, [isUnlocked, masterKey]);
+
+  // Handle #addLibrary hash URL for library installation from libraries.excalidraw.com
+  useEffect(() => {
+    if (!excalidrawAPIRef.current || !ready) return;
+
+    const hash = window.location.hash;
+    if (!hash.includes("addLibrary")) return;
+
+    const params = new URLSearchParams(hash.slice(1));
+    const libraryUrl = params.get("addLibrary");
+    if (!libraryUrl) return;
+
+    try {
+      const url = new URL(libraryUrl);
+      if (url.hostname !== "libraries.excalidraw.com") return;
+
+      fetch(libraryUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          excalidrawAPIRef.current?.updateLibrary({
+            libraryItems: blob,
+            merge: true,
+            prompt: true,
+            defaultStatus: "unpublished",
+          });
+          // Clear hash after handling
+          history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search
+          );
+        })
+        .catch((err) =>
+          console.error("Failed to load library from URL:", err)
+        );
+    } catch {
+      // Invalid URL, ignore
+    }
+  }, [ready]);
 
   // Save library on change (debounced)
   const handleLibraryChange = useCallback(
@@ -265,6 +311,9 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
         }}
         onChange={handleChange}
         onLibraryChange={handleLibraryChange}
+        libraryReturnUrl={
+          typeof window !== "undefined" ? window.location.href : undefined
+        }
       />
     </div>
   );
