@@ -8,6 +8,7 @@ import { DeleteDrawingDialog } from "@/components/DeleteDrawingDialog";
 import { ManageProjectsDialog } from "@/components/ManageProjectsDialog";
 import { ManageTagsDialog } from "@/components/ManageTagsDialog";
 import { DrawingSettingsDialog } from "@/components/DrawingSettingsDialog";
+import { BackupDrawingsDialog } from "@/components/BackupDrawingsDialog";
 
 interface Drawing {
   id: string;
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const [showManageProjects, setShowManageProjects] = useState(false);
   const [showManageTags, setShowManageTags] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [showBackup, setShowBackup] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -143,6 +145,12 @@ export default function DashboardPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 sm:w-48 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
+          <button
+            onClick={() => setShowBackup(true)}
+            className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+          >
+            Backup
+          </button>
           <button
             onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0"
@@ -320,6 +328,10 @@ export default function DashboardPage() {
         tags={tags}
         onClose={() => setShowManageTags(false)}
         onUpdated={() => { fetchTags(); fetchData(); }}
+      />
+      <BackupDrawingsDialog
+        open={showBackup}
+        onClose={() => setShowBackup(false)}
       />
       {settingsId && (() => {
         const drawing = drawings.find((d) => d.id === settingsId);
