@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -9,11 +9,15 @@ export function QrLoginDisplay() {
   const searchParams = useSearchParams();
   const qrToken = searchParams.get("qr");
 
+  const [tab, setTab] = useState<"scan" | "code">("scan");
   const [shortCode, setShortCode] = useState("");
   const [error, setError] = useState("");
+  const [cameraError, setCameraError] = useState("");
   const [status, setStatus] = useState<"idle" | "consuming" | "signing_in">(
     qrToken ? "consuming" : "idle"
   );
+  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
+  const scannerContainerRef = useRef<HTMLDivElement>(null);
 
   const consumeAndSignIn = useCallback(
     async (payload: { token: string } | { shortCode: string }) => {
@@ -56,6 +60,57 @@ export function QrLoginDisplay() {
     }
   }, [qrToken, consumeAndSignIn]);
 
+  // Initialize camera scanner
+  useEffect(() => {
+    if (tab !== "scan" || !scannerContainerRef.current || qrToken) return;
+
+    let cancelled = false;
+
+    async function startScanner() {
+      try {
+        const { Html5Qrcode } = await import("html5-qrcode");
+        if (cancelled) return;
+
+        const scanner = new Html5Qrcode("qr-login-scanner");
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            // Extract token from URL like /login?qr=TOKEN
+            try {
+              const parsed = new URL(decodedText);
+              if (parsed.origin !== window.location.origin) return;
+              const token = parsed.searchParams.get("qr");
+              if (token) {
+                scanner.stop().catch(() => {});
+                consumeAndSignIn({ token });
+              }
+            } catch {
+              // Not a valid URL, ignore
+            }
+          },
+          () => {} // Ignore scan failures
+        );
+      } catch {
+        if (!cancelled) {
+          setCameraError(
+            "Unable to access camera. Try entering the code manually."
+          );
+        }
+      }
+    }
+
+    startScanner();
+
+    return () => {
+      cancelled = true;
+      scannerRef.current?.stop().catch(() => {});
+      scannerRef.current = null;
+    };
+  }, [tab, qrToken, consumeAndSignIn]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (shortCode.length !== 6) return;
@@ -74,35 +129,96 @@ export function QrLoginDisplay() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Open Excalisave on a device where you&apos;re already logged in, click
-        the QR button, and enter the code shown:
-      </p>
-      <input
-        type="text"
-        value={shortCode}
-        onChange={(e) =>
-          setShortCode(
-            e.target.value
-              .toUpperCase()
-              .replace(/[^A-Z0-9]/g, "")
-              .slice(0, 6)
-          )
-        }
-        placeholder="XXXXXX"
-        maxLength={6}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-2xl text-center tracking-[0.3em]"
-        autoFocus
-      />
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      <button
-        type="submit"
-        disabled={shortCode.length !== 6}
-        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        Sign In
-      </button>
-    </form>
+    <div className="space-y-4">
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => {
+            setTab("scan");
+            setError("");
+            setCameraError("");
+          }}
+          className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "scan"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          Scan QR
+        </button>
+        <button
+          onClick={() => {
+            setTab("code");
+            setError("");
+          }}
+          className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+            tab === "code"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          }`}
+        >
+          Enter Code
+        </button>
+      </div>
+
+      {tab === "scan" ? (
+        <div>
+          {cameraError ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {cameraError}
+              </p>
+              <button
+                onClick={() => setTab("code")}
+                className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Enter code instead
+              </button>
+            </div>
+          ) : (
+            <>
+              <div
+                id="qr-login-scanner"
+                ref={scannerContainerRef}
+                className="w-full aspect-square rounded-lg overflow-hidden bg-black"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                Point your camera at the QR code on your logged-in device
+              </p>
+            </>
+          )}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Enter the 6-character code shown on your logged-in device:
+          </p>
+          <input
+            type="text"
+            value={shortCode}
+            onChange={(e) =>
+              setShortCode(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, "")
+                  .slice(0, 6)
+              )
+            }
+            placeholder="XXXXXX"
+            maxLength={6}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-2xl text-center tracking-[0.3em]"
+            autoFocus
+          />
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <button
+            type="submit"
+            disabled={shortCode.length !== 6}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Sign In
+          </button>
+        </form>
+      )}
+    </div>
   );
 }
