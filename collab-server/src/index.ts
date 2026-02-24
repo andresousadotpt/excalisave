@@ -211,7 +211,7 @@ io.on("connection", (socket) => {
   // --- cursor:update (unencrypted pointer positions) ---
   socket.on(
     "cursor:update",
-    (data: { pointer: { x: number; y: number }; button: string; username: string; color: string }) => {
+    (data: { pointer: { x: number; y: number; tool?: string }; button: string; username: string; color: string }) => {
       const roomId = getRoomForSocket(socket.id);
       if (!roomId) return;
 

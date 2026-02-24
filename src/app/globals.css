@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+a,
+button,
+select,
+label[for],
+[role="button"],
+[type="submit"],
+[type="reset"],
+[type="button"],
+summary {
+  cursor: pointer;
+}

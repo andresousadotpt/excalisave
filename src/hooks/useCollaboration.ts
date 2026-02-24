@@ -49,7 +49,7 @@ interface UseCollaborationReturn {
     color: string
   ) => Promise<void>;
   onPointerUpdate: (payload: {
-    pointer: { x: number; y: number };
+    pointer: { x: number; y: number; tool: "pointer" | "laser" };
     button: string;
   }) => void;
   sendSceneUpdate: (
@@ -237,20 +237,34 @@ export function useCollaboration({
           socketId: string;
           username: string;
           color: string;
-          pointer: { x: number; y: number };
+          pointer: { x: number; y: number; tool?: "pointer" | "laser" };
           button: string;
         }) => {
+          const collaborator: Collaborator = {
+            username: data.username,
+            color: { background: data.color, stroke: data.color },
+            pointer: {
+              x: data.pointer.x,
+              y: data.pointer.y,
+              tool: data.pointer.tool || "pointer",
+            },
+            button: data.button,
+            id: data.socketId,
+          };
+
           setCollaborators((prev) => {
             const next = new Map(prev);
-            next.set(data.socketId, {
-              username: data.username,
-              color: { background: data.color, stroke: data.color },
-              pointer: { x: data.pointer.x, y: data.pointer.y, tool: "pointer" },
-              button: data.button,
-              id: data.socketId,
-            });
+            next.set(data.socketId, collaborator);
             return next;
           });
+
+          // Push collaborators to Excalidraw so cursors render
+          if (excalidrawAPI) {
+            const appState = excalidrawAPI.getAppState();
+            const collabMap = new Map(appState?.collaborators || new Map());
+            collabMap.set(data.socketId, collaborator);
+            excalidrawAPI.updateScene({ collaborators: collabMap });
+          }
         }
       );
 
@@ -279,6 +293,13 @@ export function useCollaboration({
           next.delete(data.socketId);
           return next;
         });
+        // Remove from Excalidraw's collaborators
+        if (excalidrawAPI) {
+          const appState = excalidrawAPI.getAppState();
+          const collabMap = new Map(appState?.collaborators || new Map());
+          collabMap.delete(data.socketId);
+          excalidrawAPI.updateScene({ collaborators: collabMap });
+        }
       });
 
       socket.on("room:closed", () => {
@@ -528,7 +549,7 @@ export function useCollaboration({
   );
 
   const onPointerUpdate = useCallback(
-    (payload: { pointer: { x: number; y: number }; button: string }) => {
+    (payload: { pointer: { x: number; y: number; tool: "pointer" | "laser" }; button: string }) => {
       if (!socketRef.current || !isCollaborating) return;
 
       const now = Date.now();
@@ -536,7 +557,7 @@ export function useCollaboration({
       lastCursorSendRef.current = now;
 
       socketRef.current.emit("cursor:update", {
-        pointer: payload.pointer,
+        pointer: { x: payload.pointer.x, y: payload.pointer.y, tool: payload.pointer.tool },
         button: payload.button,
         username: usernameRef.current || (mode === "owner" ? "Owner" : "Guest"),
         color: colorRef.current || "#4f46e5",
