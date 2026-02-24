@@ -9,7 +9,7 @@ export default async function DrawPage({
   const { id } = await params;
 
   return (
-    <div className="h-screen w-screen">
+    <div className="h-dvh w-screen">
       <UnlockModal />
       <ExcalidrawEditor key={id} drawingId={id} />
     </div>
