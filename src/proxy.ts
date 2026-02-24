@@ -39,11 +39,13 @@ export default auth((req) => {
     }
   }
 
-  // Protect drawing, project, and tag API routes
+  // Protect drawing, project, tag, library, and collab API routes
   if (
     pathname.startsWith("/api/drawings") ||
     pathname.startsWith("/api/projects") ||
-    pathname.startsWith("/api/tags")
+    pathname.startsWith("/api/tags") ||
+    pathname.startsWith("/api/library") ||
+    pathname.startsWith("/api/collab")
   ) {
     if (!isLoggedIn) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -98,6 +100,8 @@ export const config = {
     "/api/drawings/:path*",
     "/api/projects/:path*",
     "/api/tags/:path*",
+    "/api/library",
+    "/api/collab/:path*",
     "/api/admin/:path*",
     "/api/auth/pin",
     "/api/auth/change-password",

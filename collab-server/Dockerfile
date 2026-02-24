@@ -19,6 +19,9 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
+RUN addgroup -g 1001 -S collab && adduser -S collab -u 1001 -G collab
+USER collab
+
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 4000

@@ -43,18 +43,18 @@ export async function POST(req: Request) {
       );
     }
 
-    if (qrToken.status !== "pending") {
+    // Atomic transition: only succeeds if status is still "pending"
+    const result = await prisma.qrLoginToken.updateMany({
+      where: { id: qrToken.id, status: "pending" },
+      data: { status: "consumed" },
+    });
+
+    if (result.count === 0) {
       return NextResponse.json(
         { error: "This code has already been used" },
         { status: 409 }
       );
     }
-
-    // Mark as consumed
-    await prisma.qrLoginToken.update({
-      where: { id: qrToken.id },
-      data: { status: "consumed" },
-    });
 
     return NextResponse.json({ authToken: qrToken.authToken });
   } catch (error) {

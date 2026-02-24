@@ -75,9 +75,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           encryptedMasterKey: user.encryptedMasterKey,
           masterKeySalt: user.masterKeySalt,
           masterKeyIv: user.masterKeyIv,
-          encryptedMasterKeyPin: user.encryptedMasterKeyPin ?? undefined,
-          masterKeyPinSalt: user.masterKeyPinSalt ?? undefined,
-          masterKeyPinIv: user.masterKeyPinIv ?? undefined,
+          encryptedMasterKeyPin: user.encryptedMasterKeyPin ? serverDecrypt(user.encryptedMasterKeyPin) : undefined,
+          masterKeyPinSalt: user.masterKeyPinSalt ? serverDecrypt(user.masterKeyPinSalt) : undefined,
+          masterKeyPinIv: user.masterKeyPinIv ? serverDecrypt(user.masterKeyPinIv) : undefined,
         };
       },
     }),
@@ -126,9 +126,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           encryptedMasterKey: user.encryptedMasterKey,
           masterKeySalt: user.masterKeySalt,
           masterKeyIv: user.masterKeyIv,
-          encryptedMasterKeyPin: user.encryptedMasterKeyPin ?? undefined,
-          masterKeyPinSalt: user.masterKeyPinSalt ?? undefined,
-          masterKeyPinIv: user.masterKeyPinIv ?? undefined,
+          encryptedMasterKeyPin: user.encryptedMasterKeyPin ? serverDecrypt(user.encryptedMasterKeyPin) : undefined,
+          masterKeyPinSalt: user.masterKeyPinSalt ? serverDecrypt(user.masterKeyPinSalt) : undefined,
+          masterKeyPinIv: user.masterKeyPinIv ? serverDecrypt(user.masterKeyPinIv) : undefined,
         };
       },
     }),
@@ -160,9 +160,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             select: { encryptedMasterKeyPin: true, masterKeyPinSalt: true, masterKeyPinIv: true },
           });
           if (dbUser) {
-            token.encryptedMasterKeyPin = dbUser.encryptedMasterKeyPin ?? undefined;
-            token.masterKeyPinSalt = dbUser.masterKeyPinSalt ?? undefined;
-            token.masterKeyPinIv = dbUser.masterKeyPinIv ?? undefined;
+            token.encryptedMasterKeyPin = dbUser.encryptedMasterKeyPin ? serverDecrypt(dbUser.encryptedMasterKeyPin) : undefined;
+            token.masterKeyPinSalt = dbUser.masterKeyPinSalt ? serverDecrypt(dbUser.masterKeyPinSalt) : undefined;
+            token.masterKeyPinIv = dbUser.masterKeyPinIv ? serverDecrypt(dbUser.masterKeyPinIv) : undefined;
           }
         } catch {
           // DB check failed, continue with cached token

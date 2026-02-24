@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { serverEncrypt } from "@/lib/server-crypto";
 
 const pinSchema = z.object({
   encryptedMasterKeyPin: z.string().min(1).max(500),
@@ -33,9 +34,9 @@ export async function POST(req: Request) {
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        encryptedMasterKeyPin,
-        masterKeyPinSalt,
-        masterKeyPinIv,
+        encryptedMasterKeyPin: serverEncrypt(encryptedMasterKeyPin),
+        masterKeyPinSalt: serverEncrypt(masterKeyPinSalt),
+        masterKeyPinIv: serverEncrypt(masterKeyPinIv),
       },
     });
 
