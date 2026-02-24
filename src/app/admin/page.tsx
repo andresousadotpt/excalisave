@@ -258,16 +258,18 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => handleBan(user.id, !user.banned)}
-                        className={`text-xs px-3 py-1.5 rounded transition-colors ${
-                          user.banned
-                            ? "text-green-600 hover:text-green-700 dark:text-green-400"
-                            : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
-                        }`}
-                      >
-                        {user.banned ? "Unban" : "Ban"}
-                      </button>
+                      {user.id !== session?.user?.id && (
+                        <button
+                          onClick={() => handleBan(user.id, !user.banned)}
+                          className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                            user.banned
+                              ? "text-green-600 hover:text-green-700 dark:text-green-400"
+                              : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
+                          }`}
+                        >
+                          {user.banned ? "Unban" : "Ban"}
+                        </button>
+                      )}
                       {(!isAdminRole(user.role) || isSuperAdmin(currentUserRole)) && user.id !== session?.user?.id && (
                         deleteConfirm === user.id ? (
                           <div className="flex gap-1">
@@ -344,16 +346,18 @@ export default function AdminPage() {
                 <span>{new Date(user.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => handleBan(user.id, !user.banned)}
-                  className={`text-xs px-3 py-1.5 rounded transition-colors ${
-                    user.banned
-                      ? "text-green-600 hover:text-green-700 dark:text-green-400"
-                      : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
-                  }`}
-                >
-                  {user.banned ? "Unban" : "Ban"}
-                </button>
+                {user.id !== session?.user?.id && (
+                  <button
+                    onClick={() => handleBan(user.id, !user.banned)}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                      user.banned
+                        ? "text-green-600 hover:text-green-700 dark:text-green-400"
+                        : "text-yellow-600 hover:text-yellow-700 dark:text-yellow-400"
+                    }`}
+                  >
+                    {user.banned ? "Unban" : "Ban"}
+                  </button>
+                )}
                 {(!isAdminRole(user.role) || isSuperAdmin(currentUserRole)) && user.id !== session?.user?.id && (
                   deleteConfirm === user.id ? (
                     <div className="flex gap-1">
