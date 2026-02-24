@@ -81,6 +81,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
+    Credentials({
+      id: "qr-login",
+      credentials: {
+        authToken: {},
+      },
+      async authorize(credentials) {
+        const authToken = credentials?.authToken as string | undefined;
+        if (!authToken) return null;
+
+        const qrToken = await prisma.qrLoginToken.findFirst({
+          where: { authToken, status: "consumed" },
+        });
+
+        if (!qrToken || !qrToken.userId) {
+          console.warn("[auth/qr] Invalid or already-used auth token");
+          return null;
+        }
+
+        // Nullify authToken (one-time use)
+        await prisma.qrLoginToken.update({
+          where: { id: qrToken.id },
+          data: { authToken: null },
+        });
+
+        const user = await prisma.user.findUnique({
+          where: { id: qrToken.userId },
+        });
+
+        if (!user || user.banned || !user.emailVerified) {
+          console.warn(`[auth/qr] User ${qrToken.userId} cannot log in via QR`);
+          return null;
+        }
+
+        const decryptedEmail = serverDecrypt(user.encryptedEmail);
+
+        console.log(`[auth/qr] User ${user.id} authenticated via QR (role: ${user.role})`);
+
+        return {
+          id: user.id,
+          email: decryptedEmail,
+          role: user.role,
+          mustChangePassword: user.mustChangePassword,
+          encryptedMasterKey: user.encryptedMasterKey,
+          masterKeySalt: user.masterKeySalt,
+          masterKeyIv: user.masterKeyIv,
+          encryptedMasterKeyPin: user.encryptedMasterKeyPin ?? undefined,
+          masterKeyPinSalt: user.masterKeyPinSalt ?? undefined,
+          masterKeyPinIv: user.masterKeyPinIv ?? undefined,
+        };
+      },
+    }),
   ],
   session: { strategy: "jwt" },
   pages: {

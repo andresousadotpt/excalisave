@@ -50,19 +50,20 @@ export default auth((req) => {
     }
   }
 
-  // Protect authenticated API routes (PIN, change-password, account)
+  // Protect authenticated API routes (PIN, change-password, account, QR approve)
   if (
     pathname.startsWith("/api/auth/pin") ||
     pathname.startsWith("/api/auth/change-password") ||
-    pathname.startsWith("/api/auth/account")
+    pathname.startsWith("/api/auth/account") ||
+    pathname.startsWith("/api/auth/qr/approve")
   ) {
     if (!isLoggedIn) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  // Protect account routes
-  if (pathname.startsWith("/account")) {
+  // Protect account routes and approve-login page
+  if (pathname.startsWith("/account") || pathname.startsWith("/approve-login")) {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -101,7 +102,9 @@ export const config = {
     "/api/auth/pin",
     "/api/auth/change-password",
     "/api/auth/account/:path*",
+    "/api/auth/qr/approve",
     "/account/:path*",
+    "/approve-login",
     "/change-password",
     "/login",
     "/register",

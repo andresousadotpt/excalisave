@@ -5,10 +5,12 @@ import Link from "next/link";
 import {signOut, useSession} from "next-auth/react";
 import {ThemeToggle} from "@/components/ThemeToggle";
 import {isAdminRole} from "@/lib/roles";
+import {QrScannerModal} from "@/components/QrScannerModal";
 
 export function Navbar() {
     const {data: session} = useSession();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [showQrScanner, setShowQrScanner] = useState(false);
 
     async function handleSignOut() {
         sessionStorage.removeItem("mk");
@@ -16,6 +18,7 @@ export function Navbar() {
     }
 
     return (
+        <>
         <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <Link
@@ -56,6 +59,16 @@ export function Navbar() {
                     >
                         {session?.user?.email}
                     </Link>
+                    <button
+                        onClick={() => setShowQrScanner(true)}
+                        className="p-2.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        aria-label="Approve QR login"
+                        title="Approve QR login"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h5v5H3zM16 3h5v5h-5zM3 16h5v5H3zM16 16h2v2h-2zM21 16h-2v5h2v-2M16 21h2" />
+                        </svg>
+                    </button>
                     <ThemeToggle />
                     <button
                         onClick={handleSignOut}
@@ -67,6 +80,15 @@ export function Navbar() {
 
                 {/* Mobile: theme toggle + hamburger */}
                 <div className="flex sm:hidden items-center gap-1">
+                    <button
+                        onClick={() => setShowQrScanner(true)}
+                        className="p-2.5 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        aria-label="Approve QR login"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h5v5H3zM16 3h5v5h-5zM3 16h5v5H3zM16 16h2v2h-2zM21 16h-2v5h2v-2M16 21h2" />
+                        </svg>
+                    </button>
                     <ThemeToggle />
                     <button
                         onClick={() => setMenuOpen(!menuOpen)}
@@ -115,6 +137,12 @@ export function Navbar() {
                         {session?.user?.email}
                     </Link>
                     <button
+                        onClick={() => { setShowQrScanner(true); setMenuOpen(false); }}
+                        className="w-full text-left px-3 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    >
+                        Approve login
+                    </button>
+                    <button
                         onClick={handleSignOut}
                         className="w-full text-left px-3 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                     >
@@ -123,5 +151,7 @@ export function Navbar() {
                 </div>
             )}
         </nav>
+        {showQrScanner && <QrScannerModal onClose={() => setShowQrScanner(false)} />}
+        </>
     );
 }

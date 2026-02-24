@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { generateMasterKey, encryptMasterKey, decryptMasterKey } from "@/lib/crypto";
 import { useMasterKey } from "@/hooks/useMasterKey";
+import { QrLoginDisplay } from "@/components/QrLoginDisplay";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -23,6 +24,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       : ""
   );
   const [loading, setLoading] = useState(false);
+  const [authTab, setAuthTab] = useState<"credentials" | "qr">("credentials");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,45 +114,76 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-sm">
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          placeholder="you@example.com"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          placeholder="Min 8 characters"
-        />
-      </div>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {success && <p className="text-green-600 dark:text-green-400 text-sm">{success}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {loading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
-      </button>
-    </form>
+    <div className="w-full max-w-sm">
+      {mode === "login" && (
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+          <button
+            onClick={() => setAuthTab("credentials")}
+            className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+              authTab === "credentials"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            Email & Password
+          </button>
+          <button
+            onClick={() => setAuthTab("qr")}
+            className={`flex-1 pb-2 text-sm font-medium border-b-2 transition-colors ${
+              authTab === "qr"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            QR Code
+          </button>
+        </div>
+      )}
+
+      {mode === "login" && authTab === "qr" ? (
+        <QrLoginDisplay />
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              placeholder="Min 8 characters"
+            />
+          </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-600 dark:text-green-400 text-sm">{success}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
+          </button>
+        </form>
+      )}
+    </div>
   );
 }

@@ -33,6 +33,7 @@ model User {
   drawings           Drawing[]
   projects           Project[]
   tags               Tag[]
+  qrLoginTokens      QrLoginToken[]
 }
 
 model Setting {
@@ -92,4 +93,19 @@ model DrawingTag {
 
   @@id([drawingId, tagId])
   @@index([tagId])
+}
+
+model QrLoginToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  shortCode String   @unique
+  authToken String?  @unique
+  status    String   @default("pending")
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
 }
