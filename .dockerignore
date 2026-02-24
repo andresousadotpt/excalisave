@@ -6,3 +6,4 @@ node_modules
 .env.local
 *.md
 docker-compose.yml
+collab-server
