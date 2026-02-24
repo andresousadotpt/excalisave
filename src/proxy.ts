@@ -4,6 +4,12 @@ import { isAdminRole } from "@/lib/roles";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
+
+  // Collab routes are public (handled by collab-server)
+  if (pathname.startsWith("/collab")) {
+    return NextResponse.next();
+  }
+
   const isLoggedIn = !!req.auth;
   const user = req.auth?.user;
 
@@ -99,5 +105,6 @@ export const config = {
     "/change-password",
     "/login",
     "/register",
+    "/collab/:path*",
   ],
 };

@@ -256,8 +256,9 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
       if (fp === lastFingerprintRef.current) return;
       lastFingerprintRef.current = fp;
       markDirty();
+      collab.sendSceneUpdate(elements, appState, files);
     },
-    [markDirty, ready]
+    [markDirty, ready, collab.sendSceneUpdate]
   );
 
   if (!isUnlocked) return null;
@@ -326,6 +327,33 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
             )}
           </span>
         )}
+
+        {process.env.NEXT_PUBLIC_COLLAB_URL && (
+          <button
+            onClick={async () => {
+              if (!collab.isCollaborating) {
+                await collab.startRoom();
+              }
+              setShowShareDialog(true);
+            }}
+            className="flex items-center justify-center gap-1.5 px-3 h-9 text-xs font-medium bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-900 transition-colors whitespace-nowrap"
+            title="Share for collaboration"
+          >
+            {collab.isCollaborating ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Live
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <UnsavedChangesDialog
@@ -350,6 +378,19 @@ export function ExcalidrawEditor({ drawingId }: ExcalidrawEditorProps) {
         libraryReturnUrl={
           typeof window !== "undefined" ? window.location.href : undefined
         }
+        isCollaborating={collab.isCollaborating}
+        onPointerUpdate={collab.isCollaborating ? collab.onPointerUpdate : undefined}
+      />
+
+      <CollabShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        shareUrl={collab.shareUrl}
+        participants={collab.participants}
+        onStopSharing={() => {
+          collab.stopRoom();
+          setShowShareDialog(false);
+        }}
       />
     </div>
   );

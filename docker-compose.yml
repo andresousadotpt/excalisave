@@ -35,5 +35,15 @@ services:
       db:
         condition: service_healthy
 
+  collab-server:
+    build: ./collab-server
+    restart: unless-stopped
+    ports:
+      - "${COLLAB_PORT:-4000}:4000"
+    environment:
+      PORT: "4000"
+      ALLOWED_ORIGINS: "${COLLAB_ALLOWED_ORIGINS:-http://localhost:3000}"
+      MAX_ROOM_SIZE: "${COLLAB_MAX_ROOM_SIZE:-10}"
+
 volumes:
   pgdata:

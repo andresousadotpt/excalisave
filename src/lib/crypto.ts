@@ -258,3 +258,30 @@ export async function decryptDrawing(
 
   return new TextDecoder().decode(decrypted);
 }
+
+/** Generate a random 256-bit AES-GCM room key (extractable for URL sharing) */
+export async function generateRoomKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey(
+    { name: "AES-GCM", length: KEY_LENGTH },
+    true, // extractable so it can be shared via URL
+    ["encrypt", "decrypt"]
+  );
+}
+
+/** Export room key to base64 string for URL embedding */
+export async function exportRoomKey(key: CryptoKey): Promise<string> {
+  const raw = await crypto.subtle.exportKey("raw", key);
+  return bufferToBase64(raw);
+}
+
+/** Import room key from base64 string */
+export async function importRoomKey(b64: string): Promise<CryptoKey> {
+  const raw = base64ToBuffer(b64);
+  return crypto.subtle.importKey(
+    "raw",
+    raw,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    true, // extractable so it can be re-exported for URL sharing
+    ["encrypt", "decrypt"]
+  );
+}
