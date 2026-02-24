@@ -17,7 +17,6 @@ export function QrLoginDisplay() {
     qrToken ? "consuming" : "idle"
   );
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
-  const scannerContainerRef = useRef<HTMLDivElement>(null);
 
   const consumeAndSignIn = useCallback(
     async (payload: { token: string } | { shortCode: string }) => {
@@ -62,14 +61,42 @@ export function QrLoginDisplay() {
 
   // Initialize camera scanner
   useEffect(() => {
-    if (tab !== "scan" || !scannerContainerRef.current || qrToken) return;
+    if (tab !== "scan" || qrToken) return;
 
     let cancelled = false;
 
     async function startScanner() {
+      // Request camera permission explicitly first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        // Stop the test stream immediately — Html5Qrcode will open its own
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        if (!cancelled) {
+          const name = err instanceof Error ? err.name : "";
+          if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+            setCameraError(
+              "Camera permission denied. Please allow camera access in your browser settings and reload."
+            );
+          } else {
+            setCameraError(
+              "Unable to access camera. Try entering the code manually."
+            );
+          }
+        }
+        return;
+      }
+
+      if (cancelled) return;
+
       try {
         const { Html5Qrcode } = await import("html5-qrcode");
         if (cancelled) return;
+
+        const container = document.getElementById("qr-login-scanner");
+        if (!container || cancelled) return;
 
         const scanner = new Html5Qrcode("qr-login-scanner");
         scannerRef.current = scanner;
@@ -78,7 +105,6 @@ export function QrLoginDisplay() {
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            // Extract token from URL like /login?qr=TOKEN
             try {
               const parsed = new URL(decodedText);
               if (parsed.origin !== window.location.origin) return;
@@ -91,12 +117,12 @@ export function QrLoginDisplay() {
               // Not a valid URL, ignore
             }
           },
-          () => {} // Ignore scan failures
+          () => {}
         );
       } catch {
         if (!cancelled) {
           setCameraError(
-            "Unable to access camera. Try entering the code manually."
+            "Unable to start camera scanner. Try entering the code manually."
           );
         }
       }
@@ -106,8 +132,15 @@ export function QrLoginDisplay() {
 
     return () => {
       cancelled = true;
-      scannerRef.current?.stop().catch(() => {});
+      const scanner = scannerRef.current;
       scannerRef.current = null;
+      if (scanner) {
+        try {
+          scanner.stop().catch(() => {});
+        } catch {
+          // Ignore synchronous errors from stop()
+        }
+      }
     };
   }, [tab, qrToken, consumeAndSignIn]);
 
@@ -161,34 +194,34 @@ export function QrLoginDisplay() {
         </button>
       </div>
 
-      {tab === "scan" ? (
-        <div>
-          {cameraError ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {cameraError}
-              </p>
-              <button
-                onClick={() => setTab("code")}
-                className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                Enter code instead
-              </button>
-            </div>
-          ) : (
-            <>
-              <div
-                id="qr-login-scanner"
-                ref={scannerContainerRef}
-                className="w-full aspect-square rounded-lg overflow-hidden bg-black"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                Point your camera at the QR code on your logged-in device
-              </p>
-            </>
-          )}
-        </div>
-      ) : (
+      {/* Always keep scanner container in DOM so Html5Qrcode can clean up properly */}
+      <div style={{ display: tab === "scan" ? "block" : "none" }}>
+        {cameraError ? (
+          <div className="text-center py-8">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {cameraError}
+            </p>
+            <button
+              onClick={() => setTab("code")}
+              className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Enter code instead
+            </button>
+          </div>
+        ) : (
+          <>
+            <div
+              id="qr-login-scanner"
+              className="w-full aspect-square rounded-lg overflow-hidden bg-black"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+              Point your camera at the QR code on your logged-in device
+            </p>
+          </>
+        )}
+      </div>
+
+      <div style={{ display: tab === "code" ? "block" : "none" }}>
         <form onSubmit={handleSubmit} className="space-y-3">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Enter the 6-character code shown on your logged-in device:
@@ -207,7 +240,6 @@ export function QrLoginDisplay() {
             placeholder="XXXXXX"
             maxLength={6}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-2xl text-center tracking-[0.3em]"
-            autoFocus
           />
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
@@ -218,7 +250,7 @@ export function QrLoginDisplay() {
             Sign In
           </button>
         </form>
-      )}
+      </div>
     </div>
   );
 }
