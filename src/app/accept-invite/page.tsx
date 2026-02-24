@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { generateMasterKey, encryptMasterKey } from "@/lib/crypto";
+import { PasswordInput } from "@/components/PasswordInput";
 
 function AcceptInviteForm() {
   const router = useRouter();
@@ -68,8 +69,7 @@ function AcceptInviteForm() {
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
           Password
         </label>
-        <input
-          type="password"
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -83,8 +83,7 @@ function AcceptInviteForm() {
         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
           Confirm Password
         </label>
-        <input
-          type="password"
+        <PasswordInput
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required

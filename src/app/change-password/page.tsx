@@ -9,6 +9,7 @@ import {
   decryptMasterKey,
   encryptMasterKey,
 } from "@/lib/crypto";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function ChangePasswordPage() {
   const { data: session } = useSession();
@@ -117,8 +118,7 @@ export default function ChangePasswordPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               Current Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
@@ -129,8 +129,7 @@ export default function ChangePasswordPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -142,8 +141,7 @@ export default function ChangePasswordPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               Confirm New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

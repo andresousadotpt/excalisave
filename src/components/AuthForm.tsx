@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { generateMasterKey, encryptMasterKey, decryptMasterKey } from "@/lib/crypto";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { QrLoginDisplay } from "@/components/QrLoginDisplay";
+import { PasswordInput } from "@/components/PasswordInput";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -162,9 +163,8 @@ export function AuthForm({ mode }: AuthFormProps) {
             <label htmlFor="password" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

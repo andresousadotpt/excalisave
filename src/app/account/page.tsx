@@ -9,6 +9,7 @@ import {
   generateMasterKey,
 } from "@/lib/crypto";
 import { SetPinDialog } from "@/components/SetPinDialog";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function AccountPage() {
   const { data: session, update } = useSession();
@@ -212,8 +213,7 @@ export default function AccountPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               Current Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
@@ -224,8 +224,7 @@ export default function AccountPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -237,8 +236,7 @@ export default function AccountPage() {
             <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               Confirm New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -340,8 +338,7 @@ export default function AccountPage() {
             <p className="text-sm font-medium text-red-600 dark:text-red-400">
               Enter your password to confirm account deletion:
             </p>
-            <input
-              type="password"
+            <PasswordInput
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder="Your password"

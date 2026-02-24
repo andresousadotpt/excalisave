@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { encryptMasterKeyWithPin } from "@/lib/crypto";
+import { PasswordInput } from "@/components/PasswordInput";
 
 interface SetPinDialogProps {
   masterKey: CryptoKey;
@@ -68,8 +69,7 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
           Your vault locks every time you close the browser. A PIN lets you unlock it quickly without typing your full password each time.
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="password"
+          <PasswordInput
             inputMode="text"
             maxLength={8}
             value={pin}
@@ -79,8 +79,7 @@ export function SetPinDialog({ masterKey, onClose }: SetPinDialogProps) {
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 tracking-widest text-center text-lg"
             autoFocus
           />
-          <input
-            type="password"
+          <PasswordInput
             inputMode="text"
             maxLength={8}
             value={confirmPin}

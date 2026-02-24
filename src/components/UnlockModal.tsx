@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { decryptMasterKey, decryptMasterKeyWithPin } from "@/lib/crypto";
 import { useMasterKey } from "@/hooks/useMasterKey";
 import { SetPinDialog } from "@/components/SetPinDialog";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export function UnlockModal() {
   const { data: session } = useSession();
@@ -93,8 +94,7 @@ export function UnlockModal() {
 
         {showPinMode ? (
           <form onSubmit={handleUnlockWithPin} className="space-y-3">
-            <input
-              type="password"
+            <PasswordInput
               inputMode="text"
               maxLength={8}
               value={pin}
@@ -122,8 +122,7 @@ export function UnlockModal() {
           </form>
         ) : (
           <form onSubmit={handleUnlockWithPassword} className="space-y-3">
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
