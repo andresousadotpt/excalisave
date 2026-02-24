@@ -1,173 +1,108 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function QrLoginDisplay() {
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
-  const [shortCode, setShortCode] = useState<string | null>(null);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  const searchParams = useSearchParams();
+  const qrToken = searchParams.get("qr");
+
+  const [shortCode, setShortCode] = useState("");
   const [error, setError] = useState("");
-  const [status, setStatus] = useState<"loading" | "ready" | "approved" | "signing_in">("loading");
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [status, setStatus] = useState<"idle" | "consuming" | "signing_in">(
+    qrToken ? "consuming" : "idle"
+  );
 
-  const createToken = useCallback(async () => {
-    setStatus("loading");
-    setError("");
-    try {
-      const res = await fetch("/api/auth/qr/create", { method: "POST" });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create QR code");
-      }
-      const data = await res.json();
-      setToken(data.token);
-      setShortCode(data.shortCode);
-      setQrUrl(data.qrUrl);
-      setExpiresAt(new Date(data.expiresAt).getTime());
-      setStatus("ready");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setStatus("ready");
-    }
-  }, []);
-
-  // Create token on mount
-  useEffect(() => {
-    createToken();
-  }, [createToken]);
-
-  // Countdown timer
-  useEffect(() => {
-    if (!expiresAt) return;
-    const tick = () => {
-      const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
-      setSecondsLeft(remaining);
-      if (remaining <= 0) {
-        setToken(null);
-        setStatus("ready");
-      }
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [expiresAt]);
-
-  // Poll for approval
-  useEffect(() => {
-    if (!token || status !== "ready") return;
-
-    const poll = async () => {
+  const consumeAndSignIn = useCallback(
+    async (payload: { token: string } | { shortCode: string }) => {
+      setStatus("consuming");
+      setError("");
       try {
-        const res = await fetch(`/api/auth/qr/status?token=${token}`);
+        const res = await fetch("/api/auth/qr/consume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Invalid code");
 
-        if (data.status === "approved" && data.authToken) {
-          setStatus("approved");
-          if (pollRef.current) clearInterval(pollRef.current);
+        setStatus("signing_in");
+        const result = await signIn("qr-login", {
+          authToken: data.authToken,
+          redirect: false,
+        });
 
-          setStatus("signing_in");
-          const result = await signIn("qr-login", {
-            authToken: data.authToken,
-            redirect: false,
-          });
-
-          if (result?.error) {
-            setError("Login failed. Please try again.");
-            setStatus("ready");
-            return;
-          }
-
-          router.push("/dashboard");
-        } else if (data.status === "expired" || data.status === "not_found") {
-          setToken(null);
-          if (pollRef.current) clearInterval(pollRef.current);
+        if (result?.error) {
+          setError("Login failed. Please try again.");
+          setStatus("idle");
+          return;
         }
-      } catch {
-        // Silently ignore poll errors
+
+        router.push("/dashboard");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+        setStatus("idle");
       }
-    };
+    },
+    [router]
+  );
 
-    pollRef.current = setInterval(poll, 2000);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [token, status, router]);
+  // Auto-consume if ?qr=TOKEN is in URL
+  useEffect(() => {
+    if (qrToken) {
+      consumeAndSignIn({ token: qrToken });
+    }
+  }, [qrToken, consumeAndSignIn]);
 
-  const expired = !token && status === "ready" && !error;
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (shortCode.length !== 6) return;
+    consumeAndSignIn({ shortCode: shortCode.toUpperCase() });
+  }
+
+  if (status === "consuming" || status === "signing_in") {
+    return (
+      <div className="flex flex-col items-center gap-2 py-8">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {status === "signing_in" ? "Signing you in..." : "Verifying code..."}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      {status === "loading" && (
-        <div className="w-48 h-48 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
-        </div>
-      )}
-
-      {status === "signing_in" && (
-        <div className="w-48 h-48 flex flex-col items-center justify-center gap-2">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">Signing you in...</p>
-        </div>
-      )}
-
-      {qrUrl && token && status === "ready" && (
-        <>
-          <div className="bg-white p-3 rounded-lg">
-            <QRCodeSVG value={qrUrl} size={192} />
-          </div>
-
-          {shortCode && (
-            <div className="text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Or enter this code manually:
-              </p>
-              <p className="font-mono text-2xl font-bold tracking-[0.3em] text-gray-900 dark:text-white">
-                {shortCode}
-              </p>
-            </div>
-          )}
-
-          {secondsLeft > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Expires in {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
-            </p>
-          )}
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center max-w-[250px]">
-            Scan this QR code with a device where you&apos;re already logged in to Excalisave
-          </p>
-        </>
-      )}
-
-      {expired && (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400">QR code expired</p>
-          <button
-            onClick={createToken}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            Generate new code
-          </button>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-red-500 text-sm">{error}</p>
-          <button
-            onClick={createToken}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
-            Try again
-          </button>
-        </div>
-      )}
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Open Excalisave on a device where you&apos;re already logged in, click
+        the QR button, and enter the code shown:
+      </p>
+      <input
+        type="text"
+        value={shortCode}
+        onChange={(e) =>
+          setShortCode(
+            e.target.value
+              .toUpperCase()
+              .replace(/[^A-Z0-9]/g, "")
+              .slice(0, 6)
+          )
+        }
+        placeholder="XXXXXX"
+        maxLength={6}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-2xl text-center tracking-[0.3em]"
+        autoFocus
+      />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <button
+        type="submit"
+        disabled={shortCode.length !== 6}
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        Sign In
+      </button>
+    </form>
   );
 }

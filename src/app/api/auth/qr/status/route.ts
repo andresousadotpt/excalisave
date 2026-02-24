@@ -30,16 +30,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ status: "expired" });
     }
 
-    if (qrToken.status === "approved" && qrToken.authToken) {
-      // Transition to consumed so auth token can only be retrieved once
-      const authToken = qrToken.authToken;
-      await prisma.qrLoginToken.update({
-        where: { id: qrToken.id },
-        data: { status: "consumed" },
-      });
-      return NextResponse.json({ status: "approved", authToken });
-    }
-
     return NextResponse.json({ status: qrToken.status });
   } catch (error) {
     console.error("[qr/status] Error:", error);

@@ -1,22 +1,15 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   const ip = getClientIp(req);
-  const { allowed, resetIn } = rateLimit(`qr-approve:${ip}`, 10, 60 * 1000);
+  const { allowed, resetIn } = rateLimit(`qr-consume:${ip}`, 10, 60 * 1000);
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests. Try again later." },
       { status: 429, headers: { "Retry-After": String(Math.ceil(resetIn / 1000)) } }
     );
-  }
-
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -57,25 +50,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const authToken = crypto.randomBytes(32).toString("hex");
-
+    // Mark as consumed
     await prisma.qrLoginToken.update({
       where: { id: qrToken.id },
-      data: {
-        status: "approved",
-        userId: session.user.id,
-        authToken,
-      },
+      data: { status: "consumed" },
     });
 
-    // Truncate user-agent for display
-    const deviceInfo = qrToken.userAgent
-      ? qrToken.userAgent.slice(0, 100)
-      : "Unknown device";
-
-    return NextResponse.json({ success: true, deviceInfo });
+    return NextResponse.json({ authToken: qrToken.authToken });
   } catch (error) {
-    console.error("[qr/approve] Error:", error);
+    console.error("[qr/consume] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

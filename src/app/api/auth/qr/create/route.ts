@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -23,6 +24,11 @@ export async function POST(req: Request) {
     );
   }
 
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     // Opportunistic cleanup of expired tokens
     await prisma.qrLoginToken.deleteMany({
@@ -31,7 +37,7 @@ export async function POST(req: Request) {
 
     const token = crypto.randomBytes(32).toString("hex");
     const shortCode = generateShortCode();
-    const userAgent = req.headers.get("user-agent") || undefined;
+    const authToken = crypto.randomBytes(32).toString("hex");
 
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
@@ -39,7 +45,9 @@ export async function POST(req: Request) {
       data: {
         token,
         shortCode,
-        userAgent,
+        authToken,
+        status: "pending",
+        userId: session.user.id,
         expiresAt,
       },
     });
@@ -48,7 +56,7 @@ export async function POST(req: Request) {
       ? `${req.headers.get("x-forwarded-proto") || "https"}://${req.headers.get("x-forwarded-host")}`
       : new URL(req.url).origin;
 
-    const qrUrl = `${baseUrl}/approve-login?token=${token}`;
+    const qrUrl = `${baseUrl}/login?qr=${token}`;
 
     return NextResponse.json({
       token: qrToken.token,
