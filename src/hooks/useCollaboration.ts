@@ -69,6 +69,7 @@ async function getCollabUrl(): Promise<string | null> {
   if (_collabUrlCache !== null) return _collabUrlCache || null;
   try {
     const res = await fetch("/api/collab/config");
+    if (!res.ok) return null;
     const { url } = await res.json();
     _collabUrlCache = url || "";
     return url || null;

@@ -45,7 +45,7 @@ export default auth((req) => {
     pathname.startsWith("/api/projects") ||
     pathname.startsWith("/api/tags") ||
     pathname.startsWith("/api/library") ||
-    pathname.startsWith("/api/collab")
+    (pathname.startsWith("/api/collab") && pathname !== "/api/collab/config")
   ) {
     if (!isLoggedIn) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
